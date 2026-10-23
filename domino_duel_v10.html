@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Domino Duel</title>
+<style>
+:root{--brass:#d9a64a;--brass-hi:#f3d38e;--ink:#2a1a08;--ivory:#f4ecd8;--muted:#b9a98d;--line:#4a3625;--you:#93d5a0;--ai:#8db9e6;--p0:var(--you);--p1:var(--ai);--p2:#e6c07a;--p3:#d6a0e6;--serif:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif;--sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;--bh:clamp(36px,8.4vh,66px);--hw:clamp(32px,6.6vh,54px);--dt:clamp(30px,calc(var(--hw)*.8),44px);--ts:inset 0 1px 0 #fff,0 2px 0 #bdb08a,0 5px 8px #000a;--noise:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .7 0 0 0 -.22'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E")}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;overflow:hidden}
+body{background:radial-gradient(ellipse 70% 50% at 50% 0,#5a3a22,transparent 70%),linear-gradient(#2a1b12,#140d09);background-color:#140d09;color:var(--ivory);font-family:var(--sans);overscroll-behavior:none}
+button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;padding:0;transition:transform .15s,background .15s,opacity .15s,filter .15s}
+button:focus-visible{outline:3px solid var(--brass-hi);outline-offset:2px}button:disabled{cursor:default}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.app{height:100vh;height:100dvh;max-width:1320px;margin:0 auto;padding:10px clamp(8px,2vw,22px);display:grid;grid-template-rows:auto minmax(0,1fr) auto;gap:clamp(6px,1.4vh,12px)}
+
+.topbar{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:16px}
+.brand{display:flex;align-items:center;gap:12px;min-width:0}
+.logo{flex:0 0 auto;width:30px;height:44px;transform:rotate(-8deg);filter:drop-shadow(0 4px 5px #0009)}
+.brand h1{margin:0;font:700 clamp(20px,2.4vw,26px)/1 var(--serif)}
+.brand p{margin:5px 0 0;color:var(--muted);font-size:12px}
+.top-actions{justify-self:end;display:flex;gap:8px}
+.ghost,.primary,.secondary{border-radius:8px;padding:9px 14px;font-weight:700;font-size:13px;line-height:1.1;white-space:nowrap}
+.ghost{border:1px solid var(--line);background:#ffffff08}.ghost:hover:not(:disabled){background:#ffffff16;border-color:#8f6b33}
+.primary{background:linear-gradient(var(--brass-hi),var(--brass));color:var(--ink);box-shadow:inset 0 1px 0 #fff7,0 3px 10px #d9a64a30}.primary:hover{filter:brightness(1.08);transform:translateY(-1px)}
+.secondary{background:#1f3f33;border:1px solid #3d6a58}.secondary:hover:not(:disabled){background:#27503f}
+.secondary:not(:disabled){border-color:var(--brass);box-shadow:0 0 0 3px #d9a64a2e}
+
+.scorebar,.scorebar4{width:clamp(400px,46vw,620px);display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);background:linear-gradient(#2c2018,#1c130d);border:1px solid var(--line);border-radius:14px;box-shadow:0 8px 24px #0006,inset 0 1px 0 #ffffff12;overflow:hidden}
+.player-card{position:relative;display:flex;align-items:center;gap:10px;padding:8px 14px;min-width:0}
+.player-card.you{order:1}.score-card{order:2}.player-card.ai{order:3;flex-direction:row-reverse;text-align:right}
+.player-card:after{content:"";position:absolute;left:14px;right:14px;bottom:0;height:3px;border-radius:3px 3px 0 0;background:transparent;transition:background .25s}
+.player-card.active{background:linear-gradient(#fff0,#ffffff0c)}.player-card.you.active:after{background:var(--you)}.player-card.ai.active:after{background:var(--ai)}
+.player-info{min-width:0;flex:1}
+.player-info strong{display:flex;align-items:center;gap:7px;font-size:14px}.ai .player-info strong{justify-content:flex-end}
+.player-info strong:before{content:"";flex:0 0 8px;height:8px;border-radius:50%;background:var(--you)}.ai .player-info strong:before{background:var(--ai);order:2}
+.player-info span{display:block;margin-top:3px;color:var(--muted);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.count{flex:0 0 auto;text-align:center;font-size:11px;color:var(--muted);line-height:1.1}.count b{display:block;font:700 20px/1 var(--serif);color:var(--ivory)}
+.score-card{display:flex;flex-direction:column;justify-content:center;min-width:112px;padding:6px 18px;text-align:center;background:#00000030;border:solid var(--line);border-width:0 1px}
+.score-card small{font-size:11px;color:var(--muted)}.score{font:700 28px/1.05 var(--serif);font-variant-numeric:tabular-nums}.score span.bump{display:inline-block;animation:scoreBump .6s ease}.score-caption{font-size:11px;color:var(--brass-hi)}
+
+.scorebar4{display:none;grid-template-columns:repeat(4,minmax(0,1fr))}
+.app[data-mode="4p"] .scorebar{display:none}.app[data-mode="4p"] .scorebar4{display:grid}
+.sb4-head{grid-column:1/-1;display:flex;justify-content:space-between;padding:5px 14px 4px;font-size:11px;color:var(--muted);background:#00000030;border-bottom:1px solid var(--line)}.sb4-head b{color:var(--brass-hi)}
+.chip{position:relative;min-width:0;padding:7px 8px 10px;text-align:center;border-left:1px solid var(--line)}.chip:nth-child(2){border-left:0}
+.chip:after{content:"";position:absolute;left:10px;right:10px;bottom:0;height:3px;border-radius:3px 3px 0 0;background:transparent;transition:background .25s}
+.chip.active{background:linear-gradient(#fff0,#ffffff0c)}.chip.active:after{background:var(--pc)}
+.chip-name{display:flex;align-items:center;justify-content:center;gap:6px;font-size:12px;font-weight:700}.chip-name i{flex:0 0 8px;height:8px;border-radius:50%;background:var(--pc)}
+.chip-name span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chip-score{display:inline-block;margin-top:2px;font:700 24px/1.1 var(--serif);font-variant-numeric:tabular-nums}.chip-score.bump{animation:scoreBump .6s ease}
+.chip-meta{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mode-seg{display:inline-flex;gap:2px;margin-top:6px;padding:2px;border:1px solid var(--line);border-radius:9px;background:#00000030}
+.mode-seg button{padding:5px 10px;border-radius:7px;font-size:12px;font-weight:700;color:var(--muted)}
+.mode-seg button:hover:not([aria-pressed="true"]){background:#ffffff14;color:var(--ivory)}
+.mode-seg button[aria-pressed="true"]{background:linear-gradient(var(--brass-hi),var(--brass));color:var(--ink)}
+.app[data-mode="4p"] .draw-zone{display:none}
+.app[data-mode="4p"] .dock{grid-template-columns:minmax(0,1fr)}
+.app[data-mode="4p"] .hand-zone{padding-left:0;border-left:0}
+.app[data-mode="4p"]{--side:clamp(76px,9.5vw,112px)}
+.app[data-mode="4p"] .stage{display:grid;grid-template-columns:var(--side) minmax(0,1fr) var(--side);grid-template-rows:auto auto minmax(0,1fr);gap:6px 8px}
+.app[data-mode="4p"] .status-row{grid-column:1/-1;grid-row:1}
+.app[data-mode="4p"] .opponent-area{display:contents}
+.app[data-mode="4p"] .opp-seat[data-seat="2"]{grid-column:2;grid-row:2;height:calc(var(--bh) + 22px)}
+.app[data-mode="4p"] .opp-seat[data-seat="1"]{grid-column:1;grid-row:3}
+.app[data-mode="4p"] .opp-seat[data-seat="3"]{grid-column:3;grid-row:3}
+.app[data-mode="4p"] .board{grid-column:2;grid-row:3}
+.opp-seat.side{container-type:size;height:auto;min-height:0}
+.opp-seat.side.active{box-shadow:inset 0 0 0 2px color-mix(in srgb,var(--pc) 70%,transparent)}
+.opp-seat.side .opponent-table-hand,.opp-seat.side .opponent-revealed{--sw:min(calc(100cqw - 12px),64px);--sh:clamp(12px,min(calc(var(--sw)*.52),calc((100cqh - 56px)/var(--n) - 2px)),34px);--rh:clamp(12px,min(calc((100cqw - 10px)/2),calc((100cqh - 56px)/var(--n) - 2px)),40px);flex-direction:column;flex-wrap:nowrap;align-content:center;align-items:center;justify-content:center}
+.opp-seat.side .opponent-hand-caption{flex:0 0 auto;margin:0 0 8px;white-space:pre-line;line-height:1.3}
+.opp-seat.side .opponent-back{flex:0 0 var(--sh);width:var(--sw);height:var(--sh);margin:1px 0;border-radius:5px;transform:none;transform-origin:center}
+.opp-seat.side .opponent-back:after{width:calc(var(--sh)*.5)}
+.opp-seat.side .reveal-tile{flex:0 0 var(--rh);width:calc(var(--rh)*2);height:var(--rh);margin:1px 0}
+.opp-seat.side .reveal-tile .domino{--dw:var(--rh)}
+@keyframes sideDeal{0%{opacity:0;transform:translateX(-30px) scale(.6)}100%{opacity:1;transform:none}}
+.opp-seat.side .opponent-back{animation-name:sideDeal}
+
+.stage{min-height:0;display:flex;flex-direction:column;gap:6px}
+.status-row{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:22px;padding:0 4px}
+.turn-label{display:flex;align-items:center;gap:9px;font-weight:700;font-size:14px;white-space:nowrap}
+.pulse{width:10px;height:10px;border-radius:50%;background:var(--tc,var(--you));box-shadow:0 0 0 4px color-mix(in srgb,var(--tc,var(--you)) 14%,transparent);animation:pulse 1.6s ease-in-out infinite alternate}
+.status-note{min-width:0;color:var(--muted);font-size:12px;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+.opponent-area{display:flex;gap:6px;height:calc(var(--bh) + 22px);flex:0 0 auto}
+.opp-seat{container-type:inline-size;flex:1 1 0;min-width:0;height:100%;border-radius:10px;transition:background .25s,box-shadow .25s}
+.opp-seat.active{background:#ffffff0d;box-shadow:inset 0 -3px 0 var(--pc)}
+.opp-seat .opponent-hand-caption:before{content:"";display:inline-block;width:7px;height:7px;margin-right:6px;border-radius:50%;background:var(--pc);vertical-align:1px}
+.opp-seat.active .opponent-hand-caption{color:var(--brass-hi)}
+.opponent-table-hand,.opponent-revealed{--bw:clamp(12px,min(calc(var(--bh)*.64),calc((100cqw - 6px)/var(--n) + 6px)),44px);--rw:clamp(14px,min(calc(var(--bh)*.62),calc((100cqw - 6px*var(--n))/var(--n))),60px);height:100%;display:flex;flex-wrap:wrap;justify-content:center;align-content:flex-end;align-items:flex-end}
+.opponent-hand-caption{flex:0 0 100%;text-align:center;font-size:11px;color:#d6c9ae;margin-bottom:4px}
+.opponent-back{position:relative;flex:0 0 var(--bw);width:var(--bw);height:var(--bh);margin:0 -3px;border-radius:calc(var(--bw)*.17);border:1px solid #8f6b33;background:repeating-linear-gradient(135deg,#ffffff0a 0 2px,#0000 2px 6px),linear-gradient(160deg,#322b27,#14100e);box-shadow:0 5px 10px #000a,inset 0 0 0 2px #ffffff0c;transform:rotate(var(--fan,0deg)) translateY(calc(var(--lift,0px)*.4));transform-origin:50% 120%;animation:oppDeal .5s cubic-bezier(.2,.9,.25,1) both}
+.opponent-back:after,.draw-tile:before{content:"";position:absolute;left:50%;top:50%;width:30%;aspect-ratio:1;transform:translate(-50%,-50%) rotate(45deg);border:1px solid var(--brass);background:#d9a64a22}
+.reveal-tile{flex:0 0 var(--rw);width:var(--rw);height:calc(var(--rw)*1.6);margin:0 3px;animation:revealFlip .6s cubic-bezier(.2,.8,.2,1) both}
+.reveal-tile .domino{--dw:var(--rw);width:100%;height:100%}
+
+.board{position:relative;flex:1 1 0;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;padding:clamp(8px,1.6vh,16px) clamp(10px,1.8vw,18px);border:clamp(8px,1.5vh,13px) solid transparent;border-radius:22px;background:var(--noise) padding-box,radial-gradient(ellipse at 50% 40%,#2b8259 0,#1d6b4b 50%,#0d382a 100%) padding-box,linear-gradient(135deg,#8a5a34,#4a2b16 40%,#6a4125 62%,#2d1a0c) border-box;box-shadow:inset 0 0 60px #000a,inset 0 0 0 1px #00000066,0 14px 30px #000a}
+.board:before{content:"";position:absolute;inset:6px;border:1px dashed #f3d38e33;border-radius:14px;pointer-events:none}
+.board.drop-left,.board.drop-right{box-shadow:inset 0 0 60px #000a,inset 0 0 0 3px #d9a64acc,0 14px 30px #000a}
+.board.drop-left:after,.board.drop-right:after{content:attr(data-drop-label);position:absolute;top:12px;z-index:4;padding:7px 12px;border:1px dashed var(--brass);border-radius:10px;background:#0d1a14ee;color:var(--brass-hi);font-size:12px;font-weight:800;pointer-events:none;animation:zonePulse .8s infinite alternate}
+.board.drop-left:after{left:16px}.board.drop-right:after{right:16px}
+.empty-board{position:relative;z-index:1;text-align:center;color:#d3e6da;font-size:14px;line-height:1.6}
+.empty-board strong{display:block;margin-bottom:4px;font:700 clamp(18px,3.2vh,24px)/1.2 var(--serif);color:#fff;text-shadow:0 2px 10px #0008}
+.board-scroll{flex:1 1 auto;align-self:stretch;min-height:0;display:flex;align-items:center;justify-content:center}
+.chain-wrap{width:100%;display:flex;flex-direction:column;gap:clamp(6px,1.2vh,12px);align-items:stretch}
+.chain-ends{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.chain-end{display:inline-flex;align-items:center;gap:7px;padding:4px 6px 4px 11px;border-radius:99px;background:#07140fb3;border:1px solid #d9a64a66;color:var(--brass-hi);font-size:12px;font-weight:600;white-space:nowrap;box-shadow:0 2px 8px #0006;animation:endPulse 1.6s ease-in-out infinite alternate}
+.chain-end.right{padding:4px 11px 4px 6px}
+.chain-end b{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;background:linear-gradient(var(--brass-hi),var(--brass));color:var(--ink);font-size:12px;font-weight:800}
+.chain-count{font-size:12px;color:#cfe3d8cc}
+.chain-rows.snake{position:relative;margin:0 auto}.chain-rows.snake .domino{position:absolute;margin:0}
+.chain-rows .domino{--dw:var(--cw)}
+
+.domino{--dw:42px;position:relative;width:var(--dw);height:calc(var(--dw)*1.9);flex:0 0 var(--dw);display:flex;flex-direction:column;align-items:center;justify-content:space-evenly;padding:calc(var(--dw)*.06) calc(var(--dw)*.05);border-radius:calc(var(--dw)*.17);border:1px solid #cbbe9b;background:linear-gradient(165deg,#fffbef,#f2e9d0 55%,#e2d6b4);box-shadow:var(--ts);color:#111}
+.domino:after{content:"";position:absolute;top:50%;left:calc(var(--dw)*.1);right:calc(var(--dw)*.1);height:1px;background:#8d8670;box-shadow:0 1px 0 #fff9}
+.domino:before{content:"";position:absolute;left:50%;top:50%;width:calc(var(--dw)*.15);height:calc(var(--dw)*.15);transform:translate(-50%,-50%);border-radius:50%;background:radial-gradient(circle at 35% 30%,#f8e6a8,#a47a2b);box-shadow:0 1px 2px #0006;z-index:2}
+.domino.horizontal{flex-direction:row}.domino.horizontal .half{width:50%;height:100%}
+.domino.horizontal:after{top:12%;bottom:12%;left:50%;right:auto;width:1px;height:auto;box-shadow:1px 0 0 #fff9}
+.domino .half{display:flex;align-items:center;justify-content:center;height:45%;width:100%}
+.pip-grid{width:100%;height:100%;max-width:calc(var(--dw)*.74);max-height:calc(var(--dw)*.74);display:grid;grid-template:repeat(3,1fr)/repeat(3,1fr);place-items:center;padding:calc(var(--dw)*.03)}
+.pip{display:block;width:calc(var(--dw)*.115);height:calc(var(--dw)*.115);border-radius:50%;background:radial-gradient(circle at 35% 30%,#4d4d4d,#050505 72%);box-shadow:0 .6px 0 #ffffffaa}
+.pip.p0{grid-area:1/1}.pip.p1{grid-area:1/2}.pip.p2{grid-area:1/3}.pip.p3{grid-area:2/1}.pip.p4{grid-area:2/2}.pip.p5{grid-area:2/3}.pip.p6{grid-area:3/1}.pip.p7{grid-area:3/2}.pip.p8{grid-area:3/3}
+.domino.spinner{outline:2px solid var(--brass);outline-offset:2px}
+.domino.played-in{animation:tileSlam .5s cubic-bezier(.2,.9,.25,1) both}.tile-landed{animation:tileLanding .38s cubic-bezier(.2,.85,.25,1) both}.draw-arrival{animation:drawArrival .42s cubic-bezier(.16,1,.3,1) both}
+
+.dock{display:grid;grid-template-columns:minmax(200px,250px) minmax(0,1fr);gap:clamp(10px,2vw,22px);padding:12px 16px;background:linear-gradient(#2a1e16ee,#1a110cf2);border:1px solid var(--line);border-radius:16px;box-shadow:0 -6px 24px #0005,inset 0 1px 0 #ffffff10}
+.draw-zone,.hand-zone{display:flex;flex-direction:column;gap:7px;min-width:0}
+.hand-zone{padding-left:clamp(10px,2vw,22px);border-left:1px solid var(--line)}
+.zone-head{display:flex;align-items:baseline;justify-content:space-between;gap:8px;min-height:18px;font-size:12px;color:var(--muted)}
+.zone-head h2{margin:0;font:700 15px/1 var(--serif);color:var(--ivory)}.zone-head b{color:var(--ivory)}
+.draw-table{flex:1;min-height:calc(var(--dt)*2 + 40px);display:flex;flex-wrap:wrap;align-content:flex-start;gap:5px;padding:8px 10px;border-radius:10px;background:#0c0806a0;box-shadow:inset 0 2px 8px #000a}
+.draw-area-label{flex:0 0 100%;font-size:11px;line-height:14px;color:var(--muted)}
+.draw-tile{position:relative;flex:0 0 calc(var(--dt)*.64);width:calc(var(--dt)*.64);height:var(--dt);border-radius:5px;border:1px solid #8f6b33;background:repeating-linear-gradient(135deg,#ffffff0a 0 2px,#0000 2px 6px),linear-gradient(160deg,#322b27,#14100e);box-shadow:0 3px 0 #050302,0 5px 6px #0008;animation:dealIn .3s both}
+
+.hand{--n:7;--g:6px;container-type:inline-size;position:relative;display:flex;justify-content:center;align-items:flex-end;gap:var(--g);padding:14px 4px 10px;min-height:calc(var(--hw)*1.9 + 24px)}
+.hand:after{content:"";position:absolute;left:0;right:0;bottom:0;height:14px;border-radius:7px;background:linear-gradient(#8a5a34,#5a3719 55%,#3a220f);box-shadow:0 4px 10px #000a,inset 0 1px 0 #ffffff30}
+.hand-tile{--tw:clamp(20px,calc((100cqw - (var(--n) - 1)*var(--g))/var(--n)),var(--hw));position:relative;z-index:1;flex:0 1 var(--tw);min-width:12px;margin-bottom:4px;border-radius:9px}
+.hand-tile .domino{--dw:var(--tw);transition:transform .15s,box-shadow .15s}
+.hand-tile:hover .domino{transform:translateY(-8px) rotate(-1.5deg)}
+.hand-tile.selected .domino{outline:3px solid var(--brass);outline-offset:3px;transform:translateY(-12px)}
+.hand-tile.playable-tile .domino{box-shadow:0 2px 0 #bdb08a,0 0 0 1.5px #e0b45f99,0 6px 12px #e0b45f55}
+.hand-tile.unplayable-tile{filter:brightness(.5) saturate(.6);opacity:.8}
+.hand-tile:disabled{opacity:.7}.hand-tile:disabled:hover .domino,.hand-tile.unplayable-tile:hover .domino{transform:none}
+.hand-tile.dealt{animation:handDeal .55s cubic-bezier(.2,.9,.25,1) both}.hand-tile.dragging{opacity:.35}.hand-tile.drag-over{outline:2px dashed var(--brass);outline-offset:3px}
+.hand-tile .tile-tag{position:absolute;top:-6px;right:-6px;z-index:3;background:var(--brass);color:var(--ink);border-radius:99px;font-size:10px;font-weight:900;padding:2px 6px}
+.empty-hand{color:var(--muted);font-size:13px;padding:20px 0;z-index:1}
+.play-actions{display:flex;align-items:center;gap:8px;height:38px}
+.play-actions .hint{flex:1;min-width:0;font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.play-actions button{flex:0 0 auto;font-size:12px;padding:9px 12px}
+
+.flying-domino{position:fixed;z-index:1000;pointer-events:none;filter:drop-shadow(0 20px 14px #000a);will-change:transform,opacity;transform-origin:center}
+.flying-domino .domino,.flying-domino .draw-tile{width:100%;height:100%}.flying-domino .draw-tile{display:block}
+.ripple{position:fixed;z-index:999;pointer-events:none;width:20px;height:20px;margin:-10px 0 0 -10px;border-radius:50%;border:2px solid #f3d38eaa;animation:ripple .7s ease-out forwards}
+.modal-backdrop{position:fixed;inset:0;background:#0c0704cc;backdrop-filter:blur(6px);display:none;align-items:center;justify-content:center;padding:16px;z-index:50}.modal-backdrop.show{display:flex}
+.modal{width:min(440px,100%);max-height:calc(100dvh - 32px);overflow:auto;padding:24px;text-align:center;background:linear-gradient(#2d2119,#1d140e);border:1px solid #8f6b33;border-radius:18px;box-shadow:0 30px 80px #000c,inset 0 1px 0 #ffffff14}
+.modal-icon{font-size:36px;margin-bottom:6px}.modal h2{margin:0 0 8px;font:700 26px/1.15 var(--serif)}.modal p{margin:0 0 20px;color:var(--muted);font-size:14px;line-height:1.6}.modal .primary{min-width:150px}
+.toast{position:fixed;left:50%;bottom:16px;transform:translate(-50%,20px);background:var(--brass-hi);color:var(--ink);font-size:13px;font-weight:800;padding:10px 16px;border-radius:10px;opacity:0;pointer-events:none;transition:.2s;z-index:60;box-shadow:0 8px 30px #0008}.toast.show{opacity:1;transform:translate(-50%,0)}
+
+@keyframes pulse{to{box-shadow:0 0 0 7px #0000}}
+@keyframes scoreBump{40%{transform:scale(1.3);color:var(--brass-hi)}}
+@keyframes tileSlam{0%{opacity:0;transform:translateY(-25px) scale(.75) rotate(-8deg)}65%{opacity:1;transform:translateY(3px) scale(1.06) rotate(2deg)}100%{opacity:1;transform:none}}
+@keyframes dealIn{from{opacity:0;transform:translateY(12px) scale(.8)}}
+@keyframes drawLift{to{opacity:0;transform:translateY(-65px) scale(.7) rotate(12deg)}}
+@keyframes tileLanding{0%{transform:scale(1.14);filter:brightness(1.3)}55%{transform:scale(.96)}100%{transform:none;filter:none}}
+@keyframes drawArrival{0%{transform:translateY(12px) scale(.82) rotate(5deg);opacity:.25}70%{transform:translateY(-5px) scale(1.06) rotate(-2deg);opacity:1}100%{transform:none;opacity:1}}
+@keyframes revealFlip{0%{opacity:.3;transform:rotateY(90deg) scale(.75)}100%{opacity:1;transform:none}}
+@keyframes handDeal{0%{opacity:0;transform:translateY(-120px) rotate(-14deg) scale(.7)}70%{opacity:1;transform:translateY(6px) rotate(2deg) scale(1.03)}100%{opacity:1;transform:none}}
+@keyframes oppDeal{0%{opacity:0;transform:translateY(-40px) rotate(var(--fan,0deg)) scale(.6)}100%{opacity:1;transform:rotate(var(--fan,0deg)) translateY(calc(var(--lift,0px)*.4))}}
+@keyframes zonePulse{from{opacity:.72}to{opacity:1}}
+@keyframes endPulse{to{box-shadow:0 2px 8px #0006,0 0 0 5px #d9a64a22}}
+@keyframes ripple{to{transform:scale(7);opacity:0}}
+
+@media(max-width:899px){.topbar{grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"brand actions" "score score";gap:8px}.brand{grid-area:brand}.top-actions{grid-area:actions}.scorebar,.scorebar4{grid-area:score;width:100%}.brand p{display:none}}
+@media(max-width:760px){.dock{grid-template-columns:minmax(0,1fr);gap:8px;padding:8px 10px}.draw-zone{display:grid;grid-template-columns:minmax(0,1fr);grid-template-areas:"head" "tiles";gap:6px}.draw-zone .zone-head{grid-area:head}.draw-table{grid-area:tiles;flex-wrap:nowrap;min-height:0;height:calc(var(--dt) + 14px);padding:6px 8px;gap:4px}.draw-tile{flex:1 1 0;min-width:8px;max-width:calc(var(--dt)*.64);width:auto}.draw-area-label{display:none}.draw-area-label:only-child{display:block}.hand-zone{padding-left:0;border-left:0}.hand-zone .zone-head{display:none}.play-actions:has(button) .hint{display:none}.play-actions button{flex:1}.ghost,.primary,.secondary{padding:8px 11px;font-size:12px}}
+@media(max-width:560px){.logo{display:none}.app[data-mode="4p"]{--side:clamp(48px,13vw,64px)}.opp-seat.side .opponent-hand-caption{font-size:10px}.app[data-mode="4p"] .chain-count{display:none}.app[data-mode="4p"] .chain-end{font-size:10px;padding:3px 5px 3px 8px}.app[data-mode="4p"] .chain-end.right{padding:3px 8px 3px 5px}.app[data-mode="4p"] .chain-end b{width:16px;height:16px;font-size:10px}.brand h1{font-size:18px}.mode-seg button{padding:5px 6px;font-size:11px}.chip-name{font-size:11px}.chip-score{font-size:20px}.player-info{display:none}.player-card{justify-content:center;padding:8px 10px}.score-card{padding:6px 12px;min-width:96px}.score{font-size:24px}}
+@media(max-height:700px){.app[data-mode="4p"] .opp-seat[data-seat="2"]{height:var(--bh)}.hand-zone .zone-head,.brand p{display:none}.opponent-hand-caption{display:none}.opponent-area{height:var(--bh)}.score{font-size:24px}.player-card{padding:5px 12px}.dock{padding:8px 12px}}
+@media(max-height:520px){.status-row{display:none}}
+@media(prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+</style>
+</head>
+<body>
+<div class="app" id="app" data-mode="2p">
+  <header class="topbar">
+    <div class="brand">
+      <svg class="logo" viewBox="0 0 30 44" aria-hidden="true"><rect x="1" y="1" width="28" height="42" rx="6" fill="#f4ecd8" stroke="#bdb08a"/><line x1="5" y1="22" x2="25" y2="22" stroke="#8d8670"/><circle cx="15" cy="22" r="2.4" fill="#d9a64a"/><g fill="#111"><circle cx="9" cy="8" r="2.2"/><circle cx="21" cy="14" r="2.2"/><circle cx="15" cy="11" r="2.2"/><circle cx="9" cy="32" r="2.2"/><circle cx="21" cy="32" r="2.2"/><circle cx="9" cy="38" r="2.2"/><circle cx="21" cy="38" r="2.2"/></g></svg>
+      <div><h1>Domino Duel</h1><div class="mode-seg" role="group" aria-label="Game mode"><button type="button" data-mode="2p" aria-pressed="true">2 players</button><button type="button" data-mode="4p" aria-pressed="false">4 players</button></div></div>
+    </div>
+    <section class="scorebar" aria-label="Score and players">
+      <div class="player-card ai" id="aiCard"><div class="player-info"><strong>Strategic AI</strong><span id="aiState">Thinking ahead</span></div><div class="count"><b id="aiCount">7</b><span id="aiCountLabel">tiles</span></div></div>
+      <div class="score-card"><small id="targetLabel">First to 250</small><div class="score"><span id="humanScore">0</span> : <span id="aiScore">0</span></div><div class="score-caption" id="roundLabel">Round 1</div></div>
+      <div class="player-card you" id="youCard"><div class="player-info"><strong>You</strong><span id="humanState">Your turn</span></div><div class="count"><b id="humanCount">7</b><span id="humanCountLabel">tiles</span></div></div>
+    </section>
+    <section class="scorebar4" id="scorebar4" aria-label="Scores and players"></section>
+    <div class="top-actions"><button class="ghost" id="rulesBtn">How to play</button><button class="primary" id="newGameBtn">↻ New game</button></div>
+  </header>
+
+  <main class="stage">
+    <div class="status-row"><div class="turn-label" id="turnLabel"><span class="pulse"></span><span id="turnText">Your turn</span></div><div class="status-note" id="statusNote">Select a tile that matches either open end.</div></div>
+    <div class="opponent-area" id="opponentArea"></div>
+    <div class="board" id="board" aria-label="Domino chain"><div class="empty-board"><strong>Ready to play?</strong>The highest double starts the round.</div></div>
+    <div class="sr-only" id="boardHint"></div>
+  </main>
+
+  <section class="dock">
+    <div class="draw-zone">
+      <div class="zone-head"><span>Draw pile</span><b id="pileCount">14 tiles</b></div>
+      <div class="draw-table" id="drawTable" aria-label="Face-down draw pile"></div>
+          </div>
+    <div class="hand-zone">
+      <div class="zone-head"><h2>Your hand</h2><span id="handHint">Choose a tile to see legal moves</span></div>
+      <div class="hand" id="hand" aria-label="Your domino tiles"></div>
+      <div class="play-actions" id="playActions"><span class="hint">Your tiles are shown face-up only to you.</span></div>
+    </div>
+  </section>
+</div>
+
+<div class="modal-backdrop" id="modalBackdrop" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+  <div class="modal"><div class="modal-icon" id="modalIcon">🏆</div><h2 id="modalTitle">Round complete</h2><p id="modalText"></p><button class="primary" id="nextRoundBtn">Play next round</button></div>
+</div>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const HAND_SIZE = 7;
+  // Seat 0 is always the human. Turn order runs 0 → 1 → 2 → 3 → 0 …
+  const MODES = {
+    '2p': {n: 2, target: 250, names: ['You', 'Strategic AI']},
+    '4p': {n: 4, target: 400, names: ['You', 'AI Ada', 'AI Bruno', 'AI Cleo']}
+  };
+  const state = {
+    mode: '2p', hands: [], scores: [0, 0], shownScores: [0, 0], pile: [], chain: [],
+    turn: 0, selected: null, gameOver: false, round: 1, animating: false, revealOpponent: false, resultTimer: null,
+    logs: [], aiTimer: null, previousWinner: null, matchOver: false, passed: new Set(), note: '', gen: 0,
+    dealing: false, lastTile: null, snakeMeta: null
+  };
+  let draggingHandIndex = null;
+  const cfg = () => MODES[state.mode];
+  const N = () => cfg().n;
+  const nameOf = s => cfg().names[s];
+  const subject = s => s === 0 ? 'You' : nameOf(s);
+
+  const pipTotal = hand => hand.reduce((sum, t) => sum + t.a + t.b, 0);
+  const tileKey = t => `${Math.min(t.a, t.b)}-${Math.max(t.a, t.b)}`;
+  const tileLabel = t => `${t.a}|${t.b}`;
+  const isDouble = t => t.a === t.b;
+  const hasNumber = (t, n) => t.a === n || t.b === n;
+  const ends = () => state.chain.length ? [state.chain[0].a, state.chain[state.chain.length - 1].b] : null;
+  const legalSides = t => {
+    if (!state.chain.length) return ['left'];
+    const e = ends(), sides = [];
+    if (hasNumber(t, e[0])) sides.push('left');
+    if (hasNumber(t, e[1])) sides.push('right');
+    return sides;
+  };
+  const canPlay = hand => hand.some(t => legalSides(t).length > 0);
+
+  function shuffle(arr) {
+    for (let i = arr.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [arr[i], arr[j]] = [arr[j], arr[i]]; }
+    return arr;
+  }
+  function makeSet() { const tiles = []; for (let a = 0; a <= 6; a++) for (let b = a; b <= 6; b++) tiles.push({a, b}); return tiles; }
+  // Each tile is counted once for each number it contains; a double counts once.
+  function openingIsValid(hand) { for (let n = 0; n <= 6; n++) { const count = hand.filter(t => hasNumber(t, n)).length; if (count > 5) return false; } return true; }
+  function dealValid(n) {
+    // Shuffle/deal again until every opening hand obeys the max-five rule.
+    // With 4 players all 28 tiles are dealt, so the draw pile is empty.
+    for (let attempt = 0; attempt < 50000; attempt++) {
+      const pack = shuffle(makeSet());
+      const hands = Array.from({length: n}, (_, i) => pack.slice(i * HAND_SIZE, (i + 1) * HAND_SIZE));
+      if (hands.every(openingIsValid)) return {hands, pile: pack.slice(n * HAND_SIZE)};
+    }
+    return dealValidFallback(n);
+  }
+  function dealValidFallback(n) {
+    const pack = shuffle(makeSet()), hands = Array.from({length: n}, () => []), pile = [];
+    for (const t of pack) {
+      const h = hands.find(h => h.length < HAND_SIZE && openingIsValid([...h, t]));
+      if (h) h.push(t); else pile.push(t);
+    }
+    for (const h of hands) while (h.length < HAND_SIZE && pile.length) h.push(pile.pop());
+    return {hands, pile};
+  }
+  function log(message) { state.logs.unshift(message); state.logs = state.logs.slice(0, 8); }
+
+  function pipMarkup(n) {
+    const positions = {0: [], 1: [4], 2: [0, 8], 3: [0, 4, 8], 4: [0, 2, 6, 8], 5: [0, 2, 4, 6, 8], 6: [0, 2, 3, 5, 6, 8]};
+    return `<span class="pip-grid">${(positions[n] || []).map(p => `<i class="pip p${p}"></i>`).join('')}</span>`;
+  }
+  function tileHTML(t, small = false, boardTile = false) {
+    const horizontal = boardTile && !isDouble(t);
+    return `<div class="domino${isDouble(t) ? ' double' : ''}${small ? ' small' : ''}${horizontal ? ' horizontal' : ''}" aria-label="${t.a} and ${t.b}"><div class="half">${pipMarkup(t.a)}</div><div class="half">${pipMarkup(t.b)}</div></div>`;
+  }
+  function tileHTMLdir(t, horiz, flip, extraCls, idx, style) {
+    const sh = flip && !isDouble(t) ? {a: t.b, b: t.a} : t;
+    return `<div data-idx="${idx}" class="domino small${isDouble(t) ? ' double' : ''}${horiz ? ' horizontal' : ''}${extraCls}" style="${style}" aria-label="${t.a} and ${t.b}"><div class="half">${pipMarkup(sh.a)}</div><div class="half">${pipMarkup(sh.b)}</div></div>`;
+  }
+  // Snake layout: one row if it fits; otherwise the chain runs along a row, turns up through
+  // two vertical tiles at the edge, and continues back along the row above (doubles are crosswise).
+  function snakeLayout(tiles, W, T) {
+    const gap = 4, items = [], n = tiles.length;
+    const total = tiles.reduce((a, t) => a + (isDouble(t) ? T : 2 * T) + gap, -gap);
+    const rowItem = (i, d, x, rowY, flip) => d ? {i, x, y: rowY - T / 2, w: T, h: 2 * T, horiz: false, flip} : {i, x, y: rowY, w: 2 * T, h: T, horiz: true, flip};
+    let rows = 1;
+    if (total <= W) {
+      let x = (W - total) / 2;
+      tiles.forEach((t, i) => { const d = isDouble(t); items.push(rowItem(i, d, x, 0, false)); x += (d ? T : 2 * T) + gap; });
+    } else {
+      const Lx = T + gap, Rx = W - T - gap;
+      let dir = 1, cursor = Lx, rowY = 0, i = 0, placed = 0;
+      while (i < n) {
+        const d = isDouble(tiles[i]), w = d ? T : 2 * T;
+        const fits = dir === 1 ? cursor + w <= Rx : cursor - w >= Lx;
+        if (fits || placed === 0) {
+          const x = dir === 1 ? cursor : cursor - w;
+          items.push(rowItem(i, d, x, rowY, dir === -1));
+          cursor += dir * (w + gap); i++; placed++;
+        } else {
+          const cx = dir === 1 ? W - T : 0;
+          for (let k = 0; k < 2 && i < n; k++, i++) {
+            const dd = isDouble(tiles[i]), top = rowY - T - k * 2 * T;
+            items.push(dd ? {i, x: cx - T / 2, y: top + T / 2, w: 2 * T, h: T, horiz: true, flip: false} : {i, x: cx, y: top, w: T, h: 2 * T, horiz: false, flip: true});
+          }
+          if (i < n) { rows++; rowY -= 3 * T; dir = -dir; cursor = dir === 1 ? Lx : Rx; placed = 0; }
+        }
+      }
+    }
+    let minX = 0, maxX = W, minY = Infinity, maxY = -Infinity;
+    items.forEach(it => { minX = Math.min(minX, it.x); maxX = Math.max(maxX, it.x + it.w); minY = Math.min(minY, it.y); maxY = Math.max(maxY, it.y + it.h); });
+    return {items, rows, offX: -minX, offY: -minY, width: maxX - minX, height: maxY - minY};
+  }
+
+  // Side players' revealed tiles lie flat (horizontal) so they stack down the column.
+  function sideTileHTML(t) { return tileHTML(t, true, true).replace('class="domino', isDouble(t) ? 'class="domino horizontal' : 'class="domino'); }
+  function renderOpponents() {
+    const oa = $('opponentArea'); oa.innerHTML = '';
+    const two = N() === 2;
+    for (let s = 1; s < N(); s++) {
+      const hand = state.hands[s];
+      const seat = document.createElement('div');
+      const side = !two && s !== 2; // 4p: seat 1 = left, seat 2 = across, seat 3 = right
+      seat.className = 'opp-seat' + (side ? ' side' : '') + (state.turn === s && !state.gameOver ? ' active' : '');
+      seat.dataset.seat = s; seat.style.setProperty('--pc', `var(--p${s})`);
+      const opponent = document.createElement('div');
+      opponent.className = state.revealOpponent ? 'opponent-revealed' : 'opponent-table-hand';
+      opponent.style.setProperty('--n', Math.max(1, hand.length));
+      const caption = document.createElement('div'); caption.className = 'opponent-hand-caption';
+      const count = `${hand.length} tile${hand.length === 1 ? '' : 's'}`;
+      if (two) caption.textContent = state.revealOpponent ? "Opponent's tiles" : `Opponent holds ${count}`;
+      else if (side) caption.textContent = state.revealOpponent ? `${nameOf(s)}’s\ntiles` : `${nameOf(s)}\n${count}${state.passed.has(s) ? '\npassed' : ''}`;
+      else caption.textContent = state.revealOpponent ? `${nameOf(s)}’s tiles` : `${nameOf(s)} · ${count}${state.passed.has(s) ? ' · passed' : ''}`;
+      opponent.appendChild(caption);
+      hand.forEach((tile, i) => {
+        if (state.revealOpponent) {
+          const face = document.createElement('div'); face.className = 'reveal-tile'; face.style.animationDelay = `${Math.min(i, 10) * .09}s`; face.innerHTML = side ? sideTileHTML(tile) : tileHTML(tile, true, false); opponent.appendChild(face);
+        } else {
+          const back = document.createElement('div'); back.className = 'opponent-back'; back.setAttribute('aria-label', 'Opponent face-down tile');
+          const n = hand.length, off = i - (n - 1) / 2;
+          if (!side) back.style.setProperty('--fan', `${(off * (n > 10 ? 2.2 : 3.6)).toFixed(1)}deg`);
+          if (!side) back.style.setProperty('--lift', `${(off * off * (n > 10 ? .5 : .9)).toFixed(1)}px`);
+          back.style.animationDelay = `${Math.min(i, 12) * .04}s`; opponent.appendChild(back);
+        }
+      });
+      seat.appendChild(opponent); oa.appendChild(seat);
+    }
+  }
+
+  function renderBoard() {
+    const board = $('board'); board.innerHTML = '';
+    if (!state.chain.length) {
+      const empty = document.createElement('div'); empty.className = 'empty-board'; empty.innerHTML = '<strong>Ready to play?</strong>The highest double starts the round.'; board.appendChild(empty);
+      $('boardHint').textContent = 'Opponent tiles are shown face down. Play any tile to start the chain.';
+      return;
+    }
+    const scroll = document.createElement('div'); scroll.className = 'board-scroll';
+    const e = ends();
+    const n = state.chain.length;
+    const cs = getComputedStyle(board), padX = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight), padY = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);
+    const base = board.clientWidth - padX - 6, H = Math.max(60, board.clientHeight - padY - 44);
+    let T = 14, W = Math.max(120, base - 14), lay = null;
+    for (let c = Math.min(52, Math.floor(base / 8)); c >= 14; c -= 2) { const Wc = Math.max(120, base - c), l = snakeLayout(state.chain, Wc, c); T = c; W = Wc; lay = l; if (l.height <= H) break; }
+    state.snakeMeta = {T, W};
+    const wrap = document.createElement('div'); wrap.className = 'chain-wrap';
+    wrap.insertAdjacentHTML('beforeend', `<div class="chain-ends"><span class="chain-end left">Left end <b>${e[0]}</b></span><span class="chain-count">${n} tile${n === 1 ? '' : 's'}</span><span class="chain-end right"><b>${e[1]}</b> Right end</span></div>`);
+    const snake = document.createElement('div'); snake.className = 'chain-rows snake';
+    snake.style.cssText = `--cw:${T}px;--ch:${T * 2}px;--pip:${Math.max(2, T * .115).toFixed(1)}px;width:${lay.width}px;height:${lay.height}px`;
+    lay.items.forEach(it => {
+      const t = state.chain[it.i]; let cls = ''; if (t === state.lastTile) cls += ' played-in'; if (t.first) cls += ' spinner';
+      snake.insertAdjacentHTML('beforeend', tileHTMLdir(t, it.horiz, it.flip, cls, it.i, `left:${(it.x + lay.offX).toFixed(1)}px;top:${(it.y + lay.offY).toFixed(1)}px;width:${it.w}px;height:${it.h}px`));
+    });
+    wrap.appendChild(snake);
+    scroll.appendChild(wrap); board.appendChild(scroll);
+    $('boardHint').textContent = `Open ends: ${e[0]} and ${e[1]} · ${state.chain.length} tile${state.chain.length === 1 ? '' : 's'} played · All tiles visible`;
+  }
+
+  // The draw pile is display-only: tiles are drawn automatically when a player cannot play.
+  function renderDrawTable() {
+    const area = $('drawTable'); area.innerHTML = '';
+    if (!state.pile.length) { area.innerHTML = '<span class="draw-area-label">The draw pile is empty.</span>'; return; }
+    const label = document.createElement('span'); label.className = 'draw-area-label';
+    label.textContent = (state.turn === 0 && !state.gameOver && !canPlay(state.hands[0])) ? 'No playable tile — drawing automatically…' : 'Face-down tiles — drawn automatically when a player can’t play.';
+    area.appendChild(label);
+    state.pile.forEach((tile, i) => {
+      const d = document.createElement('div'); d.className = 'draw-tile'; d.setAttribute('aria-hidden', 'true');
+      d.style.animationDelay = `${Math.min(i, 12) * 18}ms`; area.appendChild(d);
+    });
+  }
+
+  function renderHand() {
+    const hand = $('hand'), H = state.hands[0]; hand.innerHTML = ''; hand.style.setProperty('--n', Math.max(1, H.length));
+    if (!H.length) { hand.innerHTML = '<div class="empty-hand">Your hand is empty — you won this round!</div>'; return; }
+    H.forEach((t, i) => {
+      const b = document.createElement('button'); b.className = 'hand-tile' + (state.selected === i ? ' selected' : ''); b.setAttribute('aria-label', `Tile ${t.a} and ${t.b}`);
+      b.disabled = state.turn !== 0 || state.gameOver || state.animating;
+      const isPlayable = legalSides(t).length > 0;
+      b.classList.add(isPlayable ? 'playable-tile' : 'unplayable-tile');
+      b.innerHTML = tileHTML(t) + ((state.turn === 0 && !state.gameOver && state.chain.length && !isPlayable) ? '<span class="tile-tag" style="background:#d9dfd8">×</span>' : '');
+      b.draggable = true; if (state.dealing) { b.classList.add('dealt'); b.style.animationDelay = `${i * .07}s`; }
+      b.addEventListener('click', () => selectTile(i));
+      b.addEventListener('dragstart', e => { if (state.turn !== 0 || state.gameOver) { e.preventDefault(); return; } e.dataTransfer.setData('text/plain', String(i)); draggingHandIndex = i; e.dataTransfer.effectAllowed = 'move'; b.classList.add('dragging'); });
+      b.addEventListener('dragend', () => { draggingHandIndex = null; b.classList.remove('dragging'); hand.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over')); });
+      b.addEventListener('dragover', e => { if (state.turn !== 0 || state.gameOver || state.animating) return; e.preventDefault(); b.classList.add('drag-over'); e.dataTransfer.dropEffect = 'move'; });
+      b.addEventListener('dragleave', () => b.classList.remove('drag-over'));
+      b.addEventListener('drop', e => { e.preventDefault(); b.classList.remove('drag-over'); if (state.turn !== 0 || state.gameOver || state.animating) return; const from = Number(e.dataTransfer.getData('text/plain')), to = i; if (!Number.isInteger(from) || from < 0 || from >= H.length || from === to) return; const [moved] = H.splice(from, 1); H.splice(to, 0, moved); if (state.selected === from) state.selected = to; else if (state.selected !== null && from < state.selected && to >= state.selected) state.selected--; else if (state.selected !== null && from > state.selected && to <= state.selected) state.selected++; render(); });
+      hand.appendChild(b);
+    });
+    $('handHint').textContent = state.selected === null ? 'Choose a tile to see legal moves' : `Selected ${tileLabel(H[state.selected])}`;
+  }
+
+  function renderActions() {
+    const box = $('playActions'); box.innerHTML = '';
+    if (state.gameOver) { box.innerHTML = '<span class="hint">Round complete. Start the next round to continue.</span>'; return; }
+    if (state.turn !== 0) { box.innerHTML = `<span class="hint">${N() === 2 ? 'The AI is considering its next move…' : `${nameOf(state.turn)} is considering a move…`}</span>`; return; }
+    if (state.note) { box.innerHTML = `<span class="hint">${state.note}</span>`; return; }
+    if (state.selected === null) { box.innerHTML = '<span class="hint">Drag a playable tile onto the left or right end of the board.</span>'; return; }
+    const t = state.hands[0][state.selected], sides = legalSides(t);
+    if (!sides.length) { box.innerHTML = '<span class="hint">That tile cannot match either open end.</span><button class="ghost" id="clearSelection">Cancel selection</button>'; $('clearSelection').onclick = () => { state.selected = null; render(); }; return; }
+    box.insertAdjacentHTML('beforeend', `<span class="hint">Drag ${tileLabel(t)} to the matching end, or use a button:</span>`);
+    sides.forEach(side => {
+      const b = document.createElement('button'); b.className = 'primary'; b.textContent = !state.chain.length ? 'Start chain' : side === 'left' ? `← Left end (${ends()[0]})` : `Right end (${ends()[1]} →)`;
+      b.onclick = () => playTile(0, state.selected, side); box.appendChild(b);
+    });
+    const cancel = document.createElement('button'); cancel.className = 'ghost'; cancel.textContent = 'Cancel'; cancel.onclick = () => { state.selected = null; render(); }; box.appendChild(cancel);
+  }
+
+  function renderScorebar4() {
+    const sb = $('scorebar4'); if (state.mode !== '4p') { sb.innerHTML = ''; return; }
+    let html = `<div class="sb4-head"><span>Round ${state.round}</span><span>First to <b>${cfg().target}</b></span></div>`;
+    for (let s = 0; s < N(); s++) {
+      const active = state.turn === s && !state.gameOver, cnt = state.hands[s].length, changed = state.shownScores[s] !== state.scores[s];
+      html += `<div class="chip${active ? ' active' : ''}" style="--pc:var(--p${s})"><div class="chip-name"><i></i><span>${nameOf(s)}</span></div><div class="chip-score${changed ? ' bump' : ''}">${state.scores[s]}</div><div class="chip-meta">${cnt} tile${cnt === 1 ? '' : 's'}${state.passed.has(s) ? ' · passed' : ''}</div></div>`;
+    }
+    sb.innerHTML = html;
+  }
+
+  function render() {
+    renderOpponents(); renderBoard(); renderHand(); renderActions(); renderDrawTable(); renderScorebar4();
+    const me = state.hands[0], ai = state.hands[1];
+    $('pileCount').textContent = `${state.pile.length} tile${state.pile.length === 1 ? '' : 's'}`;
+    $('humanCount').textContent = me.length; $('aiCount').textContent = ai ? ai.length : 0;
+    $('humanCountLabel').textContent = me.length === 1 ? 'tile' : 'tiles'; $('aiCountLabel').textContent = ai && ai.length === 1 ? 'tile' : 'tiles';
+    [['humanScore', 0], ['aiScore', 1]].forEach(([id, i]) => {
+      const el = $(id), v = String(state.scores[i] ?? 0);
+      if (el.textContent !== v) { el.textContent = v; el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump'); }
+    });
+    state.shownScores = [...state.scores];
+    $('aiCard').classList.toggle('active', state.turn === 1 && !state.gameOver);
+    $('youCard').classList.toggle('active', state.turn === 0 && !state.gameOver);
+    $('roundLabel').textContent = `Round ${state.round}`; $('targetLabel').textContent = `First to ${cfg().target}`;
+    const myTurn = state.turn === 0 && !state.gameOver, humanTurn = myTurn && !state.animating;
+    $('turnLabel').className = 'turn-label'; $('turnLabel').style.setProperty('--tc', `var(--p${state.turn})`);
+    $('turnText').textContent = state.gameOver ? 'Round complete' : myTurn ? 'Your turn' : (N() === 2 ? 'AI turn' : `${nameOf(state.turn)}’s turn`);
+    $('statusNote').textContent = state.gameOver ? 'Check the result and start another round.'
+      : myTurn ? (state.note || (humanTurn ? 'Drag a tile to the left or right end of the table.' : ''))
+      : (N() === 2 ? 'The AI is evaluating the board…' : `${nameOf(state.turn)} is evaluating the board…`);
+    $('humanState').textContent = state.gameOver ? 'Round complete' : myTurn ? 'Your turn' : 'Waiting';
+    $('aiState').textContent = state.gameOver ? 'Round complete' : state.turn === 1 ? 'Calculating move' : 'Observing the board';
+  }
+
+  function selectTile(i) { if (state.turn !== 0 || state.gameOver || state.animating) return; state.selected = state.selected === i ? null : i; render(); }
+
+  function playTile(who, index, side) {
+    if (state.gameOver || state.animating) return;
+    const hand = state.hands[who]; if (index < 0 || index >= hand.length) return;
+    const t = hand[index]; if (!legalSides(t).includes(side)) { toast('That tile does not match this end.'); return; }
+    const source = who === 0 ? document.querySelectorAll('#hand .hand-tile')[index] : document.querySelectorAll(`#opponentArea .opp-seat[data-seat="${who}"] .opponent-back`)[index];
+    let sourceRect = source ? source.getBoundingClientRect() : $('board').getBoundingClientRect();
+    if (source && who !== 0 && sourceRect.width > sourceRect.height) { // side seat: fly out as an upright tile
+      const cx = sourceRect.left + sourceRect.width / 2, cy = sourceRect.top + sourceRect.height / 2;
+      sourceRect = {left: cx - 20, top: cy - 38, width: 40, height: 76};
+    }
+    const boardRect = $('board').getBoundingClientRect();
+    let destRect;
+    const snakeEl = $('board').querySelector('.chain-rows.snake');
+    if (snakeEl && state.snakeMeta) {
+      const meta = state.snakeMeta, cr = snakeEl.getBoundingClientRect();
+      const tiles = side === 'right' ? [...state.chain, t] : [t, ...state.chain];
+      const lay = snakeLayout(tiles, meta.W, meta.T);
+      const it = side === 'right' ? lay.items[lay.items.length - 1] : lay.items[0];
+      destRect = {left: cr.left + it.x + lay.offX, top: cr.top + it.y + lay.offY, width: it.w, height: it.h};
+    } else destRect = {left: boardRect.left + boardRect.width / 2 - 24, top: boardRect.top + boardRect.height * .5, width: 44, height: 70};
+    const g = state.gen;
+    state.animating = true; render();
+    animateFlight(t, sourceRect, destRect, false, () => { if (g !== state.gen) return; state.animating = false; commitPlayTile(who, index, side); });
+  }
+
+  function commitPlayTile(who, index, side) {
+    if (state.gameOver) return;
+    const hand = state.hands[who]; if (index < 0 || index >= hand.length) return;
+    const t = hand[index]; if (!legalSides(t).includes(side)) return;
+    hand.splice(index, 1);
+    if (!state.chain.length) { const o = {a: t.a, b: t.b, first: true}; state.chain.push(o); state.lastTile = o; }
+    else if (side === 'left') {
+      const open = state.chain[0].a;
+      const o = hasNumber(t, open) && t.b === open ? {a: t.a, b: t.b} : {a: t.b, b: t.a}; state.chain.unshift(o); state.lastTile = o;
+    } else {
+      const open = state.chain[state.chain.length - 1].b;
+      const o = t.a === open ? {a: t.a, b: t.b} : {a: t.b, b: t.a}; state.chain.push(o); state.lastTile = o;
+    }
+    state.selected = null; state.passed.delete(who);
+    log(`${subject(who)} played ${tileLabel(t)} on the ${state.chain.length === 1 ? 'start' : side} end.`);
+    if (hand.length === 0) { finishRound(who, 'empty'); return; }
+    advance();
+  }
+
+  function animateFlight(tile, fromRect, toRect, faceDown, onDone, skipLand = false) {
+    const flying = document.createElement('div');
+    flying.className = 'flying-domino';
+    flying.innerHTML = faceDown ? '<div class="draw-tile" style="display:block"></div>' : tileHTML(tile, false, false);
+    const width = Math.max(28, fromRect.width || 42), height = Math.max(42, fromRect.height || 82);
+    flying.style.left = `${fromRect.left}px`; flying.style.top = `${fromRect.top}px`;
+    flying.style.width = `${width}px`; flying.style.height = `${height}px`;
+    const inner = flying.firstElementChild;
+    if (inner) { inner.style.width = '100%'; inner.style.height = '100%'; inner.style.flex = '1 1 auto'; }
+    document.body.appendChild(flying);
+    const dx = (toRect.left + (toRect.width || width) / 2) - (fromRect.left + width / 2);
+    const dy = (toRect.top + (toRect.height || height) / 2) - (fromRect.top + height / 2);
+    const sx = (toRect.width || width) / width, sy = (toRect.height || height) / height;
+    const tilt = dx < 0 ? -12 : 12;
+    const animation = flying.animate([
+      {transform: 'translate3d(0,0,0) scale(1) rotate(0deg) rotateY(0deg)', opacity: 1, offset: 0},
+      {transform: `translate3d(${dx * .24}px,${dy * .24 - 48}px,0) scale(1.12) rotate(${tilt}deg) rotateY(${faceDown ? 35 : -10}deg)`, opacity: 1, offset: .34},
+      {transform: `translate3d(${dx * .72}px,${dy * .72 - 18}px,0) scale(${1 + (sx - 1) * .72},${1 + (sy - 1) * .72}) rotate(${tilt * .35}deg) rotateY(${faceDown ? -12 : 5}deg)`, opacity: 1, offset: .76},
+      {transform: `translate3d(${dx}px,${dy}px,0) scale(${sx},${sy}) rotate(0deg) rotateY(0deg)`, opacity: .35, offset: 1}
+    ], {duration: faceDown ? 720 : 780, easing: 'cubic-bezier(.2,.75,.18,1)', fill: 'forwards'});
+    animation.onfinish = () => {
+      flying.remove();
+      if (!faceDown) { const rp = document.createElement('div'); rp.className = 'ripple'; rp.style.left = (toRect.left + (toRect.width || width) / 2) + 'px'; rp.style.top = (toRect.top + (toRect.height || height) / 2) + 'px'; document.body.appendChild(rp); setTimeout(() => rp.remove(), 750); }
+      onDone();
+      if (skipLand) return;
+      requestAnimationFrame(() => {
+        const target = faceDown ? $('hand').lastElementChild : $('board').querySelector('.chain-rows .domino.played-in');
+        if (target) { target.classList.remove('draw-arrival', 'tile-landed'); void target.offsetWidth; target.classList.add(faceDown ? 'draw-arrival' : 'tile-landed'); }
+      });
+    };
+  }
+
+  // ---- Turn flow -------------------------------------------------------------------------
+  function advance() { state.turn = (state.turn + 1) % N(); state.selected = null; state.note = ''; render(); startTurn(); }
+
+  function startTurn() {
+    clearTimeout(state.aiTimer);
+    if (state.gameOver) return;
+    // Nobody can move and there is nothing left to draw: the round is blocked.
+    if (state.chain.length && !state.pile.length && state.hands.every(h => !canPlay(h))) { finishBlocked(); return; }
+    const s = state.turn, g = state.gen;
+    if (s !== 0) { scheduleAI(); return; }
+    if (canPlay(state.hands[0])) return; // human has a move to make
+    if (state.pile.length) {
+      state.note = 'No playable tile — drawing automatically…'; render();
+      setTimeout(() => { if (g === state.gen && state.turn === 0 && !state.gameOver) takeTurnDraws(0); }, 650);
+    } else takeTurnDraws(0);
+  }
+
+  // Draws one face-down tile at a time (with animation) until `s` can play or the pile runs out.
+  // Then the AI plays, or the player passes automatically when no move is possible.
+  function takeTurnDraws(s, drawn = 0) {
+    const g = state.gen;
+    if (state.gameOver || state.turn !== s) return;
+    const hand = state.hands[s];
+    if (!canPlay(hand) && state.pile.length) {
+      const tiles = $('drawTable').querySelectorAll('.draw-tile'), src = tiles[tiles.length - 1];
+      const fromRect = src ? src.getBoundingClientRect() : $('drawTable').getBoundingClientRect();
+      const dest = s === 0 ? $('hand') : document.querySelector(`#opponentArea .opp-seat[data-seat="${s}"]`);
+      const dr = (dest || $('board')).getBoundingClientRect();
+      const tile = state.pile.pop();
+      state.animating = true; render();
+      animateFlight(tile, fromRect, {left: dr.left + dr.width * .5 - 22, top: dr.top + dr.height * .5 - 41, width: 44, height: 82}, true, () => {
+        if (g !== state.gen) return;
+        hand.push(tile); state.animating = false; state.selected = null; render();
+        setTimeout(() => { if (g === state.gen) takeTurnDraws(s, drawn + 1); }, 260);
+      }, s !== 0);
+      return;
+    }
+    if (drawn) log(`${subject(s)} drew ${drawn} tile${drawn === 1 ? '' : 's'}${canPlay(hand) ? ' and found a playable tile.' : '.'}`);
+    if (canPlay(hand)) {
+      if (s === 0) { render(); if (drawn) toast('Playable tile found — drag it to an end.'); }
+      else setTimeout(() => { if (g === state.gen) aiPlay(s); }, drawn ? 500 : 0);
+    } else {
+      if (s === 0) { state.note = 'No playable tile — your turn passes.'; render(); toast('No playable tile — your turn passes.'); }
+      setTimeout(() => { if (g === state.gen) passTurn(s); }, s === 0 ? 1000 : (drawn ? 600 : 0));
+    }
+  }
+
+  function passTurn(s) {
+    if (state.gameOver || state.turn !== s) return;
+    state.passed.add(s); state.note = '';
+    log(`${subject(s)} passed — no legal move.`);
+    if (s !== 0) toast(`${nameOf(s)} passed — no legal move.`);
+    advance();
+  }
+
+  // ---- AI --------------------------------------------------------------------------------
+  // The AI estimates unseen tiles from the full set minus its own hand and the public board.
+  // It never reads another player's hand.
+  function knownPublicTiles(s) {
+    const known = new Map();
+    for (const t of makeSet()) known.set(tileKey(t), {...t});
+    for (const t of state.hands[s]) known.delete(tileKey(t));
+    for (const t of state.chain) known.delete(tileKey(t));
+    return [...known.values()];
+  }
+  function aiScoreMove(tile, side, s) {
+    const e = ends();
+    const open = side === 'left' ? (e ? e[0] : null) : (e ? e[1] : null);
+    const other = side === 'left' ? (e ? e[1] : null) : (e ? e[0] : null);
+    const remaining = state.hands[s].filter(t => t !== tile);
+    let score = 0;
+    score += (tile.a + tile.b) * 1.25;
+    if (isDouble(tile)) score += 2.4;
+    const newOpen = tile.a === open ? tile.b : tile.a;
+    const counts = {}; for (let n = 0; n <= 6; n++) counts[n] = remaining.filter(t => hasNumber(t, n)).length;
+    score += counts[newOpen] * 2.2;
+    if (other !== null) score += counts[other] * 0.25;
+    const publicTiles = knownPublicTiles(s);
+    const unseenCount = publicTiles.filter(t => hasNumber(t, newOpen)).length;
+    score += Math.min(unseenCount, 6) * 0.18;
+    if (e && hasNumber(tile, e[0]) && hasNumber(tile, e[1])) score += 0.7;
+    const visibleOnBoard = state.chain.flatMap(t => [t.a, t.b]);
+    const boardFreq = n => visibleOnBoard.filter(x => x === n).length;
+    score -= Math.max(0, boardFreq(newOpen) - 2) * 0.6;
+    if (isDouble(tile)) score += (tile.a * 0.3);
+    return score;
+  }
+  function chooseAIMove(s) {
+    const moves = [];
+    state.hands[s].forEach((t, i) => legalSides(t).forEach(side => moves.push({i, t, side, score: aiScoreMove(t, side, s)})));
+    moves.sort((a, b) => b.score - a.score);
+    if (!moves.length) return null;
+    const best = moves.filter(m => m.score >= moves[0].score - 0.45);
+    return best[Math.floor(Math.random() * best.length)];
+  }
+  function scheduleAI() { clearTimeout(state.aiTimer); state.aiTimer = setTimeout(aiTurn, N() === 2 ? 650 : 480); }
+  function aiTurn() {
+    const s = state.turn; if (state.gameOver || s === 0) return;
+    takeTurnDraws(s);
+  }
+  function aiPlay(s) {
+    if (state.gameOver || state.turn !== s) return;
+    const move = chooseAIMove(s);
+    if (!move) { passTurn(s); return; }
+    playTile(s, move.i, move.side);
+  }
+
+  // ---- Round / match end -----------------------------------------------------------------
+  function finishRound(winner, reason) {
+    state.gameOver = true; state.selected = null; state.animating = false; state.note = ''; state.revealOpponent = true; clearTimeout(state.aiTimer); clearTimeout(state.resultTimer);
+    const two = N() === 2, pips = state.hands.map(pipTotal), total = pips.reduce((a, b) => a + b, 0);
+    const standings = pips.map((p, i) => `${nameOf(i)} ${p}`).join(', ');
+    let title, text, icon;
+    if (reason === 'blocked') {
+      const min = Math.min(...pips), lows = pips.map((p, i) => p === min ? i : -1).filter(i => i >= 0);
+      if (lows.length === 1) {
+        winner = lows[0]; const pts = total - min, hp = pips[0], ap = pips[1];
+        state.scores[winner] += pts; state.previousWinner = winner;
+        if (two) {
+          if (winner === 0) { title = 'You win the blocked round!'; text = `Your remaining pip total is ${hp}, compared with ${ap} for the AI. You earn all ${ap} points remaining in the AI's hand.`; icon = '🏆'; }
+          else { title = 'AI wins the blocked round'; text = `The AI has ${ap} pips left compared with your ${hp}. AI earns all ${hp} points remaining in your hand.`; icon = '🤖'; }
+        } else {
+          title = winner === 0 ? 'You win the blocked round!' : `${nameOf(winner)} wins the blocked round`;
+          text = `Nobody can play. ${subject(winner)} ${winner === 0 ? 'have' : 'has'} the lowest pip total (${min}) and ${winner === 0 ? 'earn' : 'earns'} all ${pts} pips left in the other hands. Pips left: ${standings}.`;
+          icon = winner === 0 ? '🏆' : '🤖';
+        }
+      } else {
+        state.previousWinner = null; title = 'Blocked round — tie'; icon = '🤝';
+        text = two ? `Both players have ${min} pips remaining. No points are awarded.` : `${lows.length} players tie for the lowest pip total (${min}). No points are awarded. Pips left: ${standings}.`;
+      }
+    } else {
+      state.previousWinner = winner;
+      const points = total; // the winner's hand is empty, so this is every opponent's remaining pips
+      state.scores[winner] += points;
+      if (two) {
+        if (winner === 0) { title = 'You win the round!'; text = `You played your last tile. The AI had ${points} pips left, added to your match score.`; icon = '🏆'; }
+        else { title = 'AI wins this round'; text = `The AI played its last tile. You had ${points} pips left, added to the AI's match score.`; icon = '🤖'; }
+      } else if (winner === 0) {
+        title = 'You win the round!'; text = `You played your last tile. The other players had ${points} pips left in total, added to your match score.`; icon = '🏆';
+      } else {
+        title = `${nameOf(winner)} wins this round`; text = `${nameOf(winner)} played the last tile. The other players had ${points} pips left in total, added to ${nameOf(winner)}’s match score. Pips left: ${standings}.`; icon = '🤖';
+      }
+    }
+    const target = cfg().target;
+    state.matchOver = state.scores.some(s => s >= target);
+    if (state.matchOver) {
+      const top = Math.max(...state.scores), leaders = state.scores.map((s, i) => s === top ? i : -1).filter(i => i >= 0);
+      const champ = leaders.includes(winner) ? winner : leaders[0];
+      const finalScore = two ? `${state.scores[0]} : ${state.scores[1]}` : state.scores.map((s, i) => `${nameOf(i)} ${s}`).join(', ');
+      if (champ === 0) { title = '🏆 You won the match!'; text = `You reached ${state.scores[0]} points and won the match! Final score: ${finalScore}.`; icon = '🏆'; }
+      else { title = two ? 'AI won the match' : `${nameOf(champ)} won the match`; text = `${two ? 'The AI' : nameOf(champ)} reached ${state.scores[champ]} points and won the match. Final score: ${finalScore}.`; icon = '🤖'; }
+    }
+    log(title); render();
+    $('modalIcon').textContent = '👀'; $('modalTitle').textContent = 'Opponent tiles revealed'; $('modalText').textContent = two ? 'Take a look at the tiles your opponent was holding…' : 'Take a look at the tiles your opponents were holding…';
+    $('nextRoundBtn').textContent = state.matchOver ? 'Start a new match' : 'Play next round'; $('modalBackdrop').classList.remove('show');
+    state.resultTimer = setTimeout(() => {
+      if (!state.gameOver) return;
+      $('modalIcon').textContent = icon; $('modalTitle').textContent = title; $('modalText').textContent = text;
+      $('nextRoundBtn').textContent = state.matchOver ? 'Start a new match' : 'Play next round'; $('modalBackdrop').classList.add('show');
+    }, 3000);
+  }
+  function finishBlocked() { if (state.gameOver) return; log('Nobody can play and the draw pile is empty.'); finishRound(null, 'blocked'); }
+
+  function newRound(resetScores = false) {
+    clearTimeout(state.aiTimer); clearTimeout(state.resultTimer); state.gen++;
+    const n = N(), deal = dealValid(n);
+    state.hands = deal.hands; state.pile = deal.pile; state.chain = []; state.lastTile = null; state.selected = null;
+    state.gameOver = false; state.animating = false; state.revealOpponent = false; state.passed = new Set(); state.note = '';
+    if (resetScores) { state.scores = Array(n).fill(0); state.shownScores = Array(n).fill(0); state.round = 1; state.matchOver = false; state.previousWinner = null; }
+    // The previous round's winner starts the next round. The opening round (or a tie) uses the highest-double rule.
+    const all = []; state.hands.forEach((h, who) => h.forEach(t => all.push({t, who})));
+    const viaWinner = !resetScores && state.previousWinner !== null;
+    let starter;
+    if (viaWinner) {
+      const who = state.previousWinner;
+      starter = {who, t: state.hands[who].slice().sort((a, b) => (b.a + b.b) - (a.a + a.b))[0]};
+    } else {
+      const doubles = all.filter(x => isDouble(x.t)).sort((x, y) => y.t.a - x.t.a);
+      starter = doubles.length ? doubles[0] : all.slice().sort((x, y) => (y.t.a + y.t.b) - (x.t.a + x.t.b))[0];
+    }
+    state.turn = starter.who;
+    state.logs = [];
+    log('Opening deal checked: no hand has more than 5 tiles containing any one number.');
+    log(`${starter.who === 0 ? 'You start' : `${nameOf(starter.who)} starts`}${viaWinner ? ' as the previous round winner' : ''} with ${tileLabel(starter.t)}.`);
+    $('modalBackdrop').classList.remove('show');
+    state.dealing = true; render(); state.dealing = false;
+    startTurn();
+  }
+
+  // ---- Mode switching and UI wiring ------------------------------------------------------
+  function applyModeUI() {
+    $('app').dataset.mode = state.mode;
+    document.querySelectorAll('.mode-seg button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.mode === state.mode)));
+    document.title = state.mode === '2p' ? 'Domino Duel — 1v1' : 'Domino Duel — 4 players';
+  }
+  function setMode(mode) {
+    if (!MODES[mode] || mode === state.mode) return;
+    state.mode = mode; applyModeUI(); newRound(true);
+    toast(mode === '4p' ? 'New 4-player game — 7 tiles each, no draw pile.' : 'New 2-player game.');
+  }
+  function rulesText() {
+    const common = 'The highest double in the opening hands starts; if there are no doubles, the highest-pip tile starts. The opening deal is reshuffled until each player has at most five tiles containing any given number.';
+    if (state.mode === '4p') return `Four players (you and three AIs) each get 7 tiles, and there is no draw pile. Play a tile that matches either open end; if you can’t, your turn passes automatically. The first player to empty their hand wins the round and scores all pips left in the other three hands. If nobody can play, the lowest remaining pip total wins the round and scores the pips left in the other hands (a tie for lowest scores nothing). First to ${cfg().target} points wins the match. ${common}`;
+    return `Play a tile that matches either open end. If you have no playable tile, tiles are drawn for you automatically until you find one or the pile is empty; if you still can’t play, your turn passes. If no one can play with an empty pile, the player with the lower remaining pip total wins the round and scores all pips left in the opponent hand. First to ${cfg().target} points wins the match. ${common}`;
+  }
+  function toast(message) { const el = $('toast'); el.textContent = message; el.classList.add('show'); clearTimeout(toast.timer); toast.timer = setTimeout(() => el.classList.remove('show'), 2100); }
+
+  const boardEl = $('board');
+  boardEl.addEventListener('dragover', e => {
+    if (state.turn !== 0 || state.gameOver || state.animating) return;
+    const tileIndex = draggingHandIndex;
+    if (!Number.isInteger(tileIndex) || tileIndex < 0 || tileIndex >= state.hands[0].length) return;
+    const sides = legalSides(state.hands[0][tileIndex]); if (!sides.length) return;
+    e.preventDefault(); const rect = boardEl.getBoundingClientRect();
+    let side = !state.chain.length ? 'right' : (e.clientX < rect.left + rect.width / 2 ? 'left' : 'right');
+    if (!sides.includes(side)) side = sides[0];
+    boardEl.classList.toggle('drop-left', side === 'left'); boardEl.classList.toggle('drop-right', side === 'right');
+    boardEl.dataset.dropLabel = side === 'left' ? 'DROP ON LEFT END' : 'DROP ON RIGHT END'; e.dataTransfer.dropEffect = 'move';
+  });
+  boardEl.addEventListener('dragleave', e => { if (!boardEl.contains(e.relatedTarget)) { boardEl.classList.remove('drop-left', 'drop-right'); } });
+  boardEl.addEventListener('drop', e => {
+    e.preventDefault(); boardEl.classList.remove('drop-left', 'drop-right');
+    if (state.turn !== 0 || state.gameOver || state.animating) return;
+    const index = draggingHandIndex; if (!Number.isInteger(index) || index < 0 || index >= state.hands[0].length) return;
+    const sides = legalSides(state.hands[0][index]); if (!sides.length) { toast('This tile does not match either end.'); return; }
+    const rect = boardEl.getBoundingClientRect(); let side = !state.chain.length ? 'right' : (e.clientX < rect.left + rect.width / 2 ? 'left' : 'right');
+    if (!sides.includes(side)) { if (sides.length === 1) side = sides[0]; else { toast('Drop closer to the end you want to use.'); return; } }
+    playTile(0, index, side);
+  });
+  document.querySelectorAll('.mode-seg button').forEach(b => b.addEventListener('click', () => setMode(b.dataset.mode)));
+  $('newGameBtn').addEventListener('click', () => newRound(true));
+  $('rulesBtn').addEventListener('click', () => { $('modalIcon').textContent = '📘'; $('modalTitle').textContent = 'How to play'; $('modalText').textContent = rulesText(); $('nextRoundBtn').textContent = 'Back to game'; $('modalBackdrop').classList.add('show'); });
+  $('modalBackdrop').addEventListener('click', e => { if (e.target === $('modalBackdrop')) $('modalBackdrop').classList.remove('show'); });
+  $('nextRoundBtn').addEventListener('click', () => {
+    $('modalBackdrop').classList.remove('show');
+    if (state.gameOver) { if (state.matchOver) { newRound(true); } else { state.round++; newRound(false); } }
+  });
+  let rz; window.addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => { if (!state.animating && state.chain.length) renderBoard(); }, 150); });
+  applyModeUI();
+  newRound(true);
+})();
+</script>
+</body>
+</html>
