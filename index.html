@@ -478,6 +478,120 @@ button:focus-visible{outline:3px solid var(--brass-hi);outline-offset:2px}button
 
   function selectTile(i) { if (state.turn !== 0 || state.gameOver || state.animating) return; state.selected = state.selected === i ? null : i; render(); }
 
+  // Procedural close-up domino clack: a short, layered wooden/resin impact.
+  // Audio is unlocked by the first user gesture; if audio is unavailable, gameplay is unaffected.
+  let dominoAudio = null;
+  function unlockDominoAudio() {
+    if (dominoAudio) return;
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    if (!AudioCtx) return;
+    try {
+      dominoAudio = new AudioCtx();
+      if (dominoAudio.state === 'suspended') dominoAudio.resume().catch(() => {});
+    } catch (_) { dominoAudio = null; }
+  }
+  function playDominoLandSound() {
+    if (!dominoAudio) return;
+    if (dominoAudio.state === 'suspended') dominoAudio.resume().catch(() => {});
+    const ctx = dominoAudio;
+    const now = ctx.currentTime;
+    try {
+      // Main hard contact: a tight, slightly hollow "tak".
+      const body = ctx.createOscillator();
+      const bodyGain = ctx.createGain();
+      body.type = 'triangle';
+      body.frequency.setValueAtTime(520, now);
+      body.frequency.exponentialRampToValueAtTime(155, now + 0.075);
+      bodyGain.gain.setValueAtTime(0.0001, now);
+      bodyGain.gain.exponentialRampToValueAtTime(0.24, now + 0.003);
+      bodyGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.105);
+      body.connect(bodyGain); bodyGain.connect(ctx.destination);
+      body.start(now); body.stop(now + 0.11);
+
+      // Bright edge tick, like a hard domino edge touching the tabletop.
+      const tick = ctx.createOscillator();
+      const tickGain = ctx.createGain();
+      tick.type = 'square';
+      tick.frequency.setValueAtTime(1850, now + 0.002);
+      tick.frequency.exponentialRampToValueAtTime(620, now + 0.027);
+      tickGain.gain.setValueAtTime(0.0001, now);
+      tickGain.gain.exponentialRampToValueAtTime(0.075, now + 0.002);
+      tickGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.038);
+      tick.connect(tickGain); tickGain.connect(ctx.destination);
+      tick.start(now); tick.stop(now + 0.04);
+
+      // Very short filtered noise gives the impact a tactile, material texture.
+      const length = Math.floor(ctx.sampleRate * 0.055);
+      const buffer = ctx.createBuffer(1, length, ctx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < length; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / length);
+      const noise = ctx.createBufferSource();
+      const filter = ctx.createBiquadFilter();
+      const noiseGain = ctx.createGain();
+      noise.buffer = buffer; filter.type = 'lowpass'; filter.frequency.value = 2600;
+      noiseGain.gain.setValueAtTime(0.0001, now);
+      noiseGain.gain.exponentialRampToValueAtTime(0.10, now + 0.002);
+      noiseGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.052);
+      noise.connect(filter); filter.connect(noiseGain); noiseGain.connect(ctx.destination);
+      noise.start(now); noise.stop(now + 0.056);
+    } catch (_) { /* Sound must never interrupt a move. */ }
+  }
+  // A soft paper/resin-like flick for drawing a face-down domino from the pile.
+  function playDrawSound() {
+    if (!dominoAudio) return;
+    const ctx = dominoAudio, now = ctx.currentTime;
+    try {
+      // Two quick, slightly papery contacts: a low body tap followed by a crisp edge flick.
+      const osc = ctx.createOscillator(), gain = ctx.createGain();
+      osc.type = 'triangle'; osc.frequency.setValueAtTime(390, now);
+      osc.frequency.exponentialRampToValueAtTime(175, now + 0.085);
+      gain.gain.setValueAtTime(0.0001, now); gain.gain.exponentialRampToValueAtTime(0.13, now + 0.004);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.11);
+      osc.connect(gain); gain.connect(ctx.destination); osc.start(now); osc.stop(now + 0.115);
+      const n = Math.floor(ctx.sampleRate * 0.075), buffer = ctx.createBuffer(1, n, ctx.sampleRate), data = buffer.getChannelData(0);
+      for (let i = 0; i < n; i++) data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / n, 2);
+      const src = ctx.createBufferSource(), filter = ctx.createBiquadFilter(), ng = ctx.createGain();
+      src.buffer = buffer; filter.type = 'bandpass'; filter.frequency.value = 1450; filter.Q.value = 0.7;
+      ng.gain.setValueAtTime(0.0001, now); ng.gain.exponentialRampToValueAtTime(0.065, now + 0.006);
+      ng.gain.exponentialRampToValueAtTime(0.0001, now + 0.078);
+      src.connect(filter); filter.connect(ng); ng.connect(ctx.destination); src.start(now); src.stop(now + 0.08);
+    } catch (_) { /* Sound must never interrupt a draw. */ }
+  }
+
+  function playVictoryTones(notes, master = 0.12) {
+    if (!dominoAudio) return;
+    const ctx = dominoAudio, now = ctx.currentTime;
+    try {
+      notes.forEach(([freq, start, duration]) => {
+        const osc = ctx.createOscillator(), gain = ctx.createGain();
+        osc.type = 'sine'; osc.frequency.setValueAtTime(freq, now + start);
+        gain.gain.setValueAtTime(0.0001, now + start);
+        gain.gain.linearRampToValueAtTime(master, now + start + 0.025);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + start + duration);
+        osc.connect(gain); gain.connect(ctx.destination); osc.start(now + start); osc.stop(now + start + duration + 0.01);
+      });
+    } catch (_) { /* Sound must never interrupt a result screen. */ }
+  }
+  function playRoundWinSound() {
+    // Short, bright three-note win cue.
+    playVictoryTones([[659.25, 0, .22], [783.99, .13, .24], [987.77, .28, .42]], 0.105);
+  }
+  function playMatchWinSound() {
+    // Longer, fuller fanfare reserved for winning the entire match.
+    playVictoryTones([[523.25, 0, .34], [659.25, .16, .34], [783.99, .32, .38], [1046.5, .52, .75], [1318.5, .76, .85]], 0.12);
+  }
+  function playRoundLossSound() {
+    // A short, gentle descending minor phrase: clearly different from the win cue.
+    playVictoryTones([[493.88, 0, .23], [440, .16, .25], [369.99, .34, .42]], 0.085);
+  }
+  function playMatchLossSound() {
+    // A deeper, longer losing-match sting with a low resolving note.
+    playVictoryTones([[392, 0, .32], [349.23, .20, .36], [293.66, .43, .48], [196, .72, .9]], 0.105);
+  }
+
+  window.addEventListener('pointerdown', unlockDominoAudio, {once: true});
+  window.addEventListener('keydown', unlockDominoAudio, {once: true});
+
   function playTile(who, index, side) {
     if (state.gameOver || state.animating) return;
     const hand = state.hands[who]; if (index < 0 || index >= hand.length) return;
@@ -508,6 +622,7 @@ button:focus-visible{outline:3px solid var(--brass-hi);outline-offset:2px}button
     const hand = state.hands[who]; if (index < 0 || index >= hand.length) return;
     const t = hand[index]; if (!legalSides(t).includes(side)) return;
     hand.splice(index, 1);
+    playDominoLandSound();
     if (!state.chain.length) { const o = {a: t.a, b: t.b, first: true}; state.chain.push(o); state.lastTile = o; }
     else if (side === 'left') {
       const open = state.chain[0].a;
@@ -583,6 +698,7 @@ button:focus-visible{outline:3px solid var(--brass-hi);outline-offset:2px}button
       const dest = s === 0 ? $('hand') : document.querySelector(`#opponentArea .opp-seat[data-seat="${s}"]`);
       const dr = (dest || $('board')).getBoundingClientRect();
       const tile = state.pile.pop();
+      playDrawSound();
       state.animating = true; render();
       animateFlight(tile, fromRect, {left: dr.left + dr.width * .5 - 22, top: dr.top + dr.height * .5 - 41, width: 44, height: 82}, true, () => {
         if (g !== state.gen) return;
@@ -666,7 +782,7 @@ button:focus-visible{outline:3px solid var(--brass-hi);outline-offset:2px}button
     state.gameOver = true; state.selected = null; state.animating = false; state.note = ''; state.revealOpponent = true; clearTimeout(state.aiTimer); clearTimeout(state.resultTimer);
     const two = N() === 2, pips = state.hands.map(pipTotal), total = pips.reduce((a, b) => a + b, 0);
     const standings = pips.map((p, i) => `${nameOf(i)} ${p}`).join(', ');
-    let title, text, icon;
+    let title, text, icon, matchWinner = null;
     if (reason === 'blocked') {
       const min = Math.min(...pips), lows = pips.map((p, i) => p === min ? i : -1).filter(i => i >= 0);
       if (lows.length === 1) {
@@ -702,6 +818,7 @@ button:focus-visible{outline:3px solid var(--brass-hi);outline-offset:2px}button
     if (state.matchOver) {
       const top = Math.max(...state.scores), leaders = state.scores.map((s, i) => s === top ? i : -1).filter(i => i >= 0);
       const champ = leaders.includes(winner) ? winner : leaders[0];
+      matchWinner = champ;
       const finalScore = two ? `${state.scores[0]} : ${state.scores[1]}` : state.scores.map((s, i) => `${nameOf(i)} ${s}`).join(', ');
       if (champ === 0) { title = '🏆 You won the match!'; text = `You reached ${state.scores[0]} points and won the match! Final score: ${finalScore}.`; icon = '🏆'; }
       else { title = two ? 'AI won the match' : `${nameOf(champ)} won the match`; text = `${two ? 'The AI' : nameOf(champ)} reached ${state.scores[champ]} points and won the match. Final score: ${finalScore}.`; icon = '🤖'; }
@@ -713,6 +830,11 @@ button:focus-visible{outline:3px solid var(--brass-hi);outline-offset:2px}button
       if (!state.gameOver) return;
       $('modalIcon').textContent = icon; $('modalTitle').textContent = title; $('modalText').textContent = text;
       $('nextRoundBtn').textContent = state.matchOver ? 'Start a new match' : 'Play next round'; $('modalBackdrop').classList.add('show');
+      if (state.matchOver) {
+        if (matchWinner === 0) playMatchWinSound();
+        else playMatchLossSound();
+      } else if (winner === 0) playRoundWinSound();
+      else if (winner !== null) playRoundLossSound();
     }, 3000);
   }
   function finishBlocked() { if (state.gameOver) return; log('Nobody can play and the draw pile is empty.'); finishRound(null, 'blocked'); }
@@ -786,7 +908,11 @@ button:focus-visible{outline:3px solid var(--brass-hi);outline-offset:2px}button
   document.querySelectorAll('.mode-seg button').forEach(b => b.addEventListener('click', () => setMode(b.dataset.mode)));
   $('newGameBtn').addEventListener('click', () => newRound(true));
   $('rulesBtn').addEventListener('click', () => { $('modalIcon').textContent = '📘'; $('modalTitle').textContent = 'How to play'; $('modalText').textContent = rulesText(); $('nextRoundBtn').textContent = 'Back to game'; $('modalBackdrop').classList.add('show'); });
-  $('modalBackdrop').addEventListener('click', e => { if (e.target === $('modalBackdrop')) $('modalBackdrop').classList.remove('show'); });
+  $('modalBackdrop').addEventListener('click', e => {
+    // A completed round must always leave the result dialog available.
+    // The player can continue only through the explicit next-round button.
+    if (e.target === $('modalBackdrop') && !state.gameOver) $('modalBackdrop').classList.remove('show');
+  });
   $('nextRoundBtn').addEventListener('click', () => {
     $('modalBackdrop').classList.remove('show');
     if (state.gameOver) { if (state.matchOver) { newRound(true); } else { state.round++; newRound(false); } }
