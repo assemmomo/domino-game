@@ -53,6 +53,7 @@ button:focus-visible{outline:3px solid var(--brass-hi);outline-offset:2px}button
 .mode-seg button{padding:5px 10px;border-radius:7px;font-size:12px;font-weight:700;color:var(--muted)}
 .mode-seg button:hover:not([aria-pressed="true"]){background:#ffffff14;color:var(--ivory)}
 .mode-seg button[aria-pressed="true"]{background:linear-gradient(var(--brass-hi),var(--brass));color:var(--ink)}
+.seg-row{display:flex;flex-wrap:wrap;gap:6px 8px}.seg-row .mode-seg{margin-top:6px}
 .app[data-mode="4p"] .draw-zone{display:none}
 .app[data-mode="4p"] .dock{grid-template-columns:minmax(0,1fr)}
 .app[data-mode="4p"] .hand-zone{padding-left:0;border-left:0}
@@ -184,7 +185,7 @@ button:focus-visible{outline:3px solid var(--brass-hi);outline-offset:2px}button
   <header class="topbar">
     <div class="brand">
       <svg class="logo" viewBox="0 0 30 44" aria-hidden="true"><rect x="1" y="1" width="28" height="42" rx="6" fill="#f4ecd8" stroke="#bdb08a"/><line x1="5" y1="22" x2="25" y2="22" stroke="#8d8670"/><circle cx="15" cy="22" r="2.4" fill="#d9a64a"/><g fill="#111"><circle cx="9" cy="8" r="2.2"/><circle cx="21" cy="14" r="2.2"/><circle cx="15" cy="11" r="2.2"/><circle cx="9" cy="32" r="2.2"/><circle cx="21" cy="32" r="2.2"/><circle cx="9" cy="38" r="2.2"/><circle cx="21" cy="38" r="2.2"/></g></svg>
-      <div><h1>Domino Duel</h1><div class="mode-seg" role="group" aria-label="Game mode"><button type="button" data-mode="2p" aria-pressed="true">2 players</button><button type="button" data-mode="4p" aria-pressed="false">4 players</button></div></div>
+      <div><h1>Domino Duel</h1><div class="seg-row"><div class="mode-seg" id="modeSeg" role="group" aria-label="Game mode"><button type="button" data-mode="2p" aria-pressed="true">2 players</button><button type="button" data-mode="4p" aria-pressed="false">4 players</button></div><div class="mode-seg" id="diffSeg" role="group" aria-label="AI difficulty"><button type="button" data-diff="easy" aria-pressed="false">Easy</button><button type="button" data-diff="medium" aria-pressed="false">Medium</button><button type="button" data-diff="hard" aria-pressed="true">Hard</button></div></div></div>
     </div>
     <section class="scorebar" aria-label="Score and players">
       <div class="player-card ai" id="aiCard"><div class="player-info"><strong>Strategic AI</strong><span id="aiState">Thinking ahead</span></div><div class="count"><b id="aiCount">7</b><span id="aiCountLabel">tiles</span></div></div>
@@ -232,7 +233,7 @@ button:focus-visible{outline:3px solid var(--brass-hi);outline-offset:2px}button
   const state = {
     mode: '2p', hands: [], scores: [0, 0], shownScores: [0, 0], pile: [], chain: [],
     turn: 0, selected: null, gameOver: false, round: 1, animating: false, revealOpponent: false, resultTimer: null,
-    logs: [], aiTimer: null, previousWinner: null, matchOver: false, passed: new Set(), note: '', gen: 0,
+    logs: [], aiTimer: null, previousWinner: null, matchOver: false, passed: new Set(), missing: [], difficulty: 'hard', note: '', gen: 0,
     dealing: false, lastTile: null, snakeMeta: null
   };
   let draggingHandIndex = null;
@@ -769,6 +770,7 @@ button:focus-visible{outline:3px solid var(--brass-hi);outline-offset:2px}button
     const g = state.gen;
     if (state.gameOver || state.turn !== s) return;
     const hand = state.hands[s];
+    if (drawn === 0 && state.chain.length && !canPlay(hand)) noteCannotPlay(s); // public info: this seat has no tile for either open end
     if (!canPlay(hand) && state.pile.length) {
       const tiles = $('drawTable').querySelectorAll('.draw-tile'), src = tiles[tiles.length - 1];
       const fromRect = src ? src.getBoundingClientRect() : $('drawTable').getBoundingClientRect();
@@ -834,12 +836,109 @@ button:focus-visible{outline:3px solid var(--brass-hi);outline-offset:2px}button
     if (isDouble(tile)) score += (tile.a * 0.3);
     return score;
   }
+  // ---- Smarter AI: pass tracking + hidden-hand inference + look-ahead simulation ----------
+  // Everything below uses only public information (own hand, tiles on the table, hand sizes, passes/draws).
+  // 1) Pass tracking: a seat that could not play on the open ends holds no tile with those numbers.
+  function noteCannotPlay(s) {
+    const e = ends(); if (!e || !state.missing[s]) return;
+    // If it will draw, older knowledge is no longer certain, but the current ends still are
+    // (it keeps drawing until it finds a tile that fits, so every earlier draw missed these numbers too).
+    if (state.pile.length) state.missing[s] = new Set(e);
+    else { state.missing[s].add(e[0]); state.missing[s].add(e[1]); }
+  }
+  // 2) Hidden-hand inference: deal the unseen tiles into the other hands + draw pile at random,
+  //    but never give a seat a tile containing a number it is known to lack.
+  function sampleWorld(s, unseen, others) {
+    const cap = {}, hands = {}; others.forEach(j => { cap[j] = state.hands[j].length; hands[j] = []; });
+    let pc = state.pile.length; const pile = [];
+    const order = shuffle(unseen.slice()).map(t => ({t, allow: others.filter(j => !state.missing[j].has(t.a) && !state.missing[j].has(t.b))}));
+    order.sort((x, y) => x.allow.length - y.allow.length); // most constrained tiles first
+    for (const {t, allow} of order) {
+      let cands = allow.filter(j => cap[j] > 0), w = cands.map(j => cap[j]);
+      if (pc > 0) { cands.push('pile'); w.push(pc); }
+      if (!cands.length) { cands = others.filter(j => cap[j] > 0); w = cands.map(j => cap[j]); if (pc > 0) { cands.push('pile'); w.push(pc); } }
+      let r = Math.random() * w.reduce((a, b) => a + b, 0), k = 0;
+      while (k < cands.length - 1 && r >= w[k]) { r -= w[k]; k++; }
+      const pick = cands.length ? cands[k] : 'pile'; // safety net, should not happen when sizes are consistent
+      if (pick === 'pile') { pile.push(t); pc--; } else { hands[pick].push(t); cap[pick]--; }
+    }
+    return {hands, pile};
+  }
+  // 3) Tiny game simulator (only the two open ends matter).
+  const simMoves = (hand, E) => { const m = []; hand.forEach((t, i) => { if (!E) m.push({i, side: 'left'}); else { if (hasNumber(t, E[0])) m.push({i, side: 'left'}); if (hasNumber(t, E[1])) m.push({i, side: 'right'}); } }); return m; };
+  function simApply(sim, q, idx, side) {
+    const t = sim.H[q].splice(idx, 1)[0];
+    if (!sim.E) sim.E = [t.a, t.b];
+    else if (side === 'left') sim.E = [t.a === sim.E[0] ? t.b : t.a, sim.E[1]];
+    else sim.E = [sim.E[0], t.a === sim.E[1] ? t.b : t.a];
+    sim.passes = 0; sim.turn = (q + 1) % sim.n;
+    if (!sim.H[q].length) { sim.over = 'empty'; sim.winner = q; }
+  }
+  function simQuick(t, side, hand, E) {
+    let open, other;
+    if (!E) { open = t.a; other = t.b; }
+    else if (side === 'left') { open = t.a === E[0] ? t.b : t.a; other = E[1]; }
+    else { open = t.a === E[1] ? t.b : t.a; other = E[0]; }
+    let c1 = 0, c2 = 0; for (const x of hand) if (x !== t) { if (hasNumber(x, open)) c1++; if (hasNumber(x, other)) c2++; }
+    return (t.a + t.b) * 1.2 + (isDouble(t) ? 2.5 : 0) + c1 * 2 + c2 * 0.3;
+  }
+  function simStep(sim) { // one ply: the seat to move draws if needed, then plays its best-looking tile
+    const q = sim.turn, hand = sim.H[q];
+    let moves = simMoves(hand, sim.E);
+    while (!moves.length && sim.pile.length) { hand.push(sim.pile.pop()); moves = simMoves(hand, sim.E); }
+    if (!moves.length) { sim.passes++; sim.turn = (q + 1) % sim.n; if (sim.passes >= sim.n && !sim.pile.length) sim.over = 'blocked'; return; }
+    let best = moves[0], bs = -Infinity;
+    for (const m of moves) { const sc = simQuick(hand[m.i], m.side, hand, sim.E); if (sc > bs) { bs = sc; best = m; } }
+    simApply(sim, q, best.i, best.side);
+  }
+  function simEval(sim, s) { // higher = better for seat s
+    const n = sim.n, pips = sim.H.map(pipTotal), mine = pips[s];
+    let others = 0, minO = Infinity, cntO = 0;
+    for (let j = 0; j < n; j++) if (j !== s) { others += pips[j]; minO = Math.min(minO, pips[j]); cntO += sim.H[j].length; }
+    const avgO = others / (n - 1);
+    if (sim.over === 'empty') return sim.winner === s ? 50 + others : -(50 + mine);
+    if (sim.over === 'blocked') return mine < minO ? 30 + avgO - mine : mine > minO ? -30 - (mine - minO) : 0;
+    const playable = sim.E ? sim.H[s].filter(t => hasNumber(t, sim.E[0]) || hasNumber(t, sim.E[1])).length : 0;
+    return (avgO - mine) * 0.7 + (cntO / (n - 1) - sim.H[s].length) * 2.5 + playable * 0.8 - (sim.H[s].length && sim.E && !playable ? 3 : 0);
+  }
   function chooseAIMove(s) {
-    const moves = [];
-    state.hands[s].forEach((t, i) => legalSides(t).forEach(side => moves.push({i, t, side, score: aiScoreMove(t, side, s)})));
-    moves.sort((a, b) => b.score - a.score);
+    const myHand = state.hands[s], moves = [];
+    myHand.forEach((t, i) => legalSides(t).forEach(side => moves.push({i, t, side, h: aiScoreMove(t, side, s)})));
     if (!moves.length) return null;
-    const best = moves.filter(m => m.score >= moves[0].score - 0.45);
+    if (moves.length === 1) return moves[0];
+    if (state.difficulty !== 'hard') {
+      moves.sort((a, b) => b.h - a.h);
+      if (state.difficulty === 'easy') { // often plays a random legal tile, otherwise picks loosely among the better ones
+        if (Math.random() < 0.45) return moves[Math.floor(Math.random() * moves.length)];
+        const ok = moves.filter(m => m.h >= moves[0].h - 3);
+        return ok[Math.floor(Math.random() * ok.length)];
+      }
+      const ok = moves.filter(m => m.h >= moves[0].h - 0.45); // medium = the original v14 heuristic
+      return ok[Math.floor(Math.random() * ok.length)];
+    }
+    const n = N(), seen = new Set([...myHand, ...state.chain].map(tileKey));
+    const unseen = makeSet().filter(t => !seen.has(tileKey(t)));
+    const others = []; for (let j = 0; j < n; j++) if (j !== s) others.push(j);
+    const handsSum = state.hands.reduce((a, h) => a + h.length, 0);
+    const depth = (n === 2 ? 4 : 5) + (handsSum <= 10 ? 4 : 0); // search deeper in the endgame
+    const K = n === 2 ? 48 : 32, t0 = performance.now(), total = moves.map(() => 0);
+    let samples = 0;
+    while (samples < K && (samples < 6 || performance.now() - t0 < 350)) {
+      const world = sampleWorld(s, unseen, others);
+      moves.forEach((m, mi) => {
+        const sim = {n, E: ends(), H: state.hands.map(h => h.slice()), pile: world.pile.slice(), turn: s, passes: 0, over: null, winner: null};
+        others.forEach(j => { sim.H[j] = world.hands[j].slice(); });
+        simApply(sim, s, m.i, m.side);
+        // Blocking bonus: the next seat has nothing to play on the new ends.
+        const bonus = !sim.over && !simMoves(sim.H[sim.turn], sim.E).length ? 6 : 0;
+        for (let d = 0; d < depth && !sim.over; d++) simStep(sim);
+        total[mi] += simEval(sim, s) + bonus;
+      });
+      samples++;
+    }
+    moves.forEach((m, mi) => { m.score = m.h * 0.3 + total[mi] / samples; });
+    moves.sort((a, b) => b.score - a.score);
+    const best = moves.filter(m => m.score >= moves[0].score - 0.6);
     return best[Math.floor(Math.random() * best.length)];
   }
   function scheduleAI() { clearTimeout(state.aiTimer); state.aiTimer = setTimeout(aiTurn, N() === 2 ? 650 : 480); }
@@ -920,7 +1019,7 @@ button:focus-visible{outline:3px solid var(--brass-hi);outline-offset:2px}button
     clearTimeout(state.aiTimer); clearTimeout(state.resultTimer); state.gen++;
     const n = N(), deal = dealValid(n);
     state.hands = deal.hands; state.pile = deal.pile; state.chain = []; state.lastTile = null; state.selected = null;
-    state.gameOver = false; state.animating = false; state.revealOpponent = false; state.passed = new Set(); state.note = '';
+    state.gameOver = false; state.animating = false; state.revealOpponent = false; state.passed = new Set(); state.missing = Array.from({length: n}, () => new Set()); state.note = '';
     if (resetScores) { state.scores = Array(n).fill(0); state.shownScores = Array(n).fill(0); state.round = 1; state.matchOver = false; state.previousWinner = null; }
     // The previous round's winner starts the next round. The opening round (or a tie) uses the highest-double rule.
     const all = []; state.hands.forEach((h, who) => h.forEach(t => all.push({t, who})));
@@ -945,7 +1044,8 @@ button:focus-visible{outline:3px solid var(--brass-hi);outline-offset:2px}button
   // ---- Mode switching and UI wiring ------------------------------------------------------
   function applyModeUI() {
     $('app').dataset.mode = state.mode;
-    document.querySelectorAll('.mode-seg button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.mode === state.mode)));
+    document.querySelectorAll('#modeSeg button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.mode === state.mode)));
+    document.querySelectorAll('#diffSeg button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.diff === state.difficulty)));
     document.title = state.mode === '2p' ? 'Domino Duel — 1v1' : 'Domino Duel — 4 players';
   }
   function setMode(mode) {
@@ -1017,7 +1117,13 @@ button:focus-visible{outline:3px solid var(--brass-hi);outline-offset:2px}button
     const el = handEl.querySelectorAll('.hand-tile')[to];
     if (el) { const r = el.getBoundingClientRect(); el.animate([{transform: `translate(${pt.x - (r.left + r.width / 2)}px,${pt.y - (r.top + r.height / 2)}px) scale(1.08)`}, {transform: 'none'}], {duration: 240, easing: 'cubic-bezier(.2,.9,.25,1)'}); }
   });
-  document.querySelectorAll('.mode-seg button').forEach(b => b.addEventListener('click', () => setMode(b.dataset.mode)));
+  document.querySelectorAll('#modeSeg button').forEach(b => b.addEventListener('click', () => setMode(b.dataset.mode)));
+  document.querySelectorAll('#diffSeg button').forEach(b => b.addEventListener('click', () => {
+    if (b.dataset.diff === state.difficulty) return;
+    state.difficulty = b.dataset.diff; try { localStorage.setItem('dominoDuelDifficulty', state.difficulty); } catch (_) {}
+    applyModeUI(); toast({easy: 'AI: Easy — plays carelessly.', medium: 'AI: Medium — solid, no deep planning.', hard: 'AI: Hard — tracks passes, infers your tiles, looks ahead.'}[state.difficulty]);
+  }));
+  try { const d = localStorage.getItem('dominoDuelDifficulty'); if (d === 'easy' || d === 'medium' || d === 'hard') state.difficulty = d; } catch (_) {}
   $('newGameBtn').addEventListener('click', () => newRound(true));
   $('rulesBtn').addEventListener('click', () => { $('modalIcon').textContent = '📘'; $('modalTitle').textContent = 'How to play'; $('modalText').textContent = rulesText(); $('nextRoundBtn').textContent = 'Back to game'; $('modalBackdrop').classList.add('show'); });
   $('modalBackdrop').addEventListener('click', e => {
