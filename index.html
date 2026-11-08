@@ -176,8 +176,185 @@ button:focus-visible{outline:3px solid var(--brass-hi);outline-offset:2px}button
 @media(max-width:760px){.dock{grid-template-columns:minmax(0,1fr);gap:8px;padding:8px 10px}.draw-zone{display:grid;grid-template-columns:minmax(0,1fr);grid-template-areas:"head" "tiles";gap:6px}.draw-zone .zone-head{grid-area:head}.draw-table{grid-area:tiles;flex-wrap:nowrap;min-height:0;height:calc(var(--dt) + 14px);padding:6px 8px;gap:4px}.draw-tile{flex:1 1 0;min-width:8px;max-width:calc(var(--dt)*.64);width:auto}.draw-area-label{display:none}.draw-area-label:only-child{display:block}.hand-zone{padding-left:0;border-left:0}.hand-zone .zone-head{display:none}.play-actions:has(button) .hint{display:none}.play-actions button{flex:1}.ghost,.primary,.secondary{padding:8px 11px;font-size:12px}}
 @media(max-width:560px){.logo{display:none}.app[data-mode="4p"]{--side:clamp(48px,13vw,64px)}.opp-seat.side .opponent-hand-caption{font-size:10px}.app[data-mode="4p"] .chain-count{display:none}.app[data-mode="4p"] .chain-end{font-size:10px;padding:3px 5px 3px 8px}.app[data-mode="4p"] .chain-end.right{padding:3px 8px 3px 5px}.app[data-mode="4p"] .chain-end b{width:16px;height:16px;font-size:10px}.brand h1{font-size:18px}.mode-seg button{padding:5px 6px;font-size:11px}.chip-name{font-size:11px}.chip-score{font-size:20px}.player-info{display:none}.player-card{justify-content:center;padding:8px 10px}.score-card{padding:6px 12px;min-width:96px}.score{font-size:24px}}
 @media(max-height:700px){.app[data-mode="4p"] .opp-seat[data-seat="2"]{height:var(--bh)}.hand-zone .zone-head,.brand p{display:none}.opponent-hand-caption{display:none}.opponent-area{height:var(--bh)}.score{font-size:24px}.player-card{padding:5px 12px}.dock{padding:8px 12px}}
+.app[data-felt="blue"] .board{background:var(--noise) padding-box,radial-gradient(ellipse at 50% 40%,#2f6fa8 0,#1f5282 50%,#0d2b4a 100%) padding-box,linear-gradient(135deg,#8a5a34,#4a2b16 40%,#6a4125 62%,#2d1a0c) border-box}
+.app[data-felt="red"] .board{background:var(--noise) padding-box,radial-gradient(ellipse at 50% 40%,#9a2f3e 0,#74212d 50%,#3d0f17 100%) padding-box,linear-gradient(135deg,#8a5a34,#4a2b16 40%,#6a4125 62%,#2d1a0c) border-box}
+@media(max-width:560px){.top-actions{gap:5px}#soundBtn,#themeBtn,#langBtn{padding:8px 9px}}
+/* ===== new table / tile colours ===== */
+.app[data-felt="purple"] .board{background:var(--noise) padding-box,radial-gradient(ellipse at 50% 40%,#7a4aa8 0,#57307f 50%,#2b1545 100%) padding-box,linear-gradient(135deg,#8a5a34,#4a2b16 40%,#6a4125 62%,#2d1a0c) border-box}
+.app[data-felt="charcoal"] .board{background:var(--noise) padding-box,radial-gradient(ellipse at 50% 40%,#4a4f57 0,#32363c 50%,#16181b 100%) padding-box,linear-gradient(135deg,#8a5a34,#4a2b16 40%,#6a4125 62%,#2d1a0c) border-box}
+.app[data-felt="amber"] .board{background:var(--noise) padding-box,radial-gradient(ellipse at 50% 40%,#c88a2c 0,#9a6218 50%,#53330a 100%) padding-box,linear-gradient(135deg,#8a5a34,#4a2b16 40%,#6a4125 62%,#2d1a0c) border-box}
+html[data-tiles="ruby"] .domino{background:linear-gradient(158deg,#f0788a,#c0344c 45%,#7a1426);border-color:#5e0f1e;box-shadow:inset 0 1px 0 #ffffff60,inset 0 -2px 3px #4a0a1666,0 2px 0 #4a0a16,0 7px 10px #000c}
+html[data-tiles="ruby"] .domino:after{background:#4a0a16;box-shadow:0 1px 0 #ffffff55}
+html[data-tiles="ruby"] .domino.horizontal:after{box-shadow:1px 0 0 #ffffff55}
+html[data-tiles="ruby"] .pip,html[data-tiles="azure"] .pip{background:radial-gradient(circle at 34% 28%,#fffef2,#efe6c4 65%,#bcae82);box-shadow:0 1px 2px #000a}
+html[data-tiles="ruby"] .hand-tile.playable-tile .domino,html[data-tiles="azure"] .hand-tile.playable-tile .domino{box-shadow:0 2px 0 #20120a,0 0 0 2px #f2c76fcc,0 0 18px #f2c76f88,0 9px 14px #000a}
+html[data-tiles="azure"] .domino{background:linear-gradient(158deg,#78bdf6,#2f7fcc 45%,#194a86);border-color:#12386a;box-shadow:inset 0 1px 0 #ffffff60,inset 0 -2px 3px #0a244a66,0 2px 0 #0f2d56,0 7px 10px #000c}
+html[data-tiles="azure"] .domino:after{background:#0f2d56;box-shadow:0 1px 0 #ffffff55}
+html[data-tiles="azure"] .domino.horizontal:after{box-shadow:1px 0 0 #ffffff55}
+
+/* ===== appearance menu ===== */
+.theme-backdrop{z-index:55}
+.sheet{width:min(460px,100%);max-height:calc(100dvh - 24px);overflow:auto;overscroll-behavior:contain;padding:16px 18px 18px;background:linear-gradient(#2d2119,#1d140e);border:1px solid #8f6b33;border-radius:18px;box-shadow:0 30px 80px #000c,inset 0 1px 0 #ffffff14}
+.sheet-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.sheet-head h2{margin:0;font:700 22px/1.2 var(--serif)}
+.sheet-x{flex:0 0 auto;width:38px;height:38px;border-radius:50%;border:1px solid var(--line);background:#ffffff08;font-size:15px}
+.sheet-x:hover{background:#ffffff16;border-color:#8f6b33}
+.sheet h3{margin:16px 0 8px;font-size:13px;color:var(--muted);font-weight:700}
+.swatches{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.sw{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;min-height:76px;padding:9px 4px 8px;border:2px solid var(--line);border-radius:12px;background:#ffffff08;font-size:12px;font-weight:700;color:var(--ivory)}
+.sw:hover{background:#ffffff14}
+.sw[aria-pressed="true"]{border-color:var(--brass);background:#d9a64a1f;box-shadow:0 0 0 3px #d9a64a2e}
+.sw-felt{display:block;width:52px;height:30px;border-radius:8px;border:3px solid #7a4d28;background:var(--sbg);box-shadow:inset 0 0 8px #0008}
+.sw-tile{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:space-around;width:22px;height:38px;padding:5px 0;border-radius:5px;border:1px solid #0006;background:var(--sbg);box-shadow:0 2px 4px #0008}
+.sw-tile:after{content:"";position:absolute;left:3px;right:3px;top:50%;height:1px;background:#0007}
+.sw-tile i{display:block;width:6px;height:6px;border-radius:50%;background:var(--spip)}
+.sheet-done{display:block;width:100%;margin-top:18px;padding:12px 14px;font-size:14px}
+
+/* ===== general touch / mobile polish ===== */
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%;touch-action:manipulation}
+body{-webkit-tap-highlight-color:transparent}
+.app{padding-top:max(10px,env(safe-area-inset-top));padding-bottom:max(10px,env(safe-area-inset-bottom));padding-left:max(clamp(8px,2vw,22px),env(safe-area-inset-left));padding-right:max(clamp(8px,2vw,22px),env(safe-area-inset-right))}
+.hand-tile{touch-action:manipulation;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
+.toast{bottom:max(16px,env(safe-area-inset-bottom));max-width:calc(100vw - 24px);text-align:center}
+@media(pointer:coarse){.ghost,.primary,.secondary{min-height:38px}.mode-seg button{min-height:30px}}
+
+@media(min-width:900px){.scorebar,.scorebar4{width:clamp(400px,38vw,540px)}}
+@media(max-width:899px){
+  .topbar{grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"title actions" "segs segs" "score score";gap:6px 8px}
+  .brand,.brand-text{display:contents}
+  .logo{display:none}
+  .brand h1{grid-area:title;align-self:center}
+  .seg-row{grid-area:segs;flex-wrap:nowrap;gap:6px}
+  .seg-row .mode-seg{margin-top:0;flex:1 1 0;min-width:0}
+  .seg-row .mode-seg button{flex:1 1 0;min-width:0;padding:6px 4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .top-actions{grid-area:actions;flex-wrap:nowrap;gap:5px}
+}
+@media(max-width:640px){
+  #rulesBtn,#newGameBtn{font-size:0;display:inline-flex;align-items:center;justify-content:center;width:38px;padding:0}
+  #rulesBtn,#newGameBtn{line-height:1}
+  #rulesBtn:before{content:"?";font-size:17px;line-height:1}
+  #newGameBtn:before{content:"↻";font-size:19px;line-height:1}
+  #soundBtn,#themeBtn,#langBtn{width:38px;padding:0;display:inline-flex;align-items:center;justify-content:center}
+  #langBtn{font-size:12px}
+  .brand h1{font-size:18px}
+}
+@media(max-width:420px){
+  .topbar{grid-template-areas:"actions actions" "segs segs" "score score"}
+  .brand h1{display:none}
+  .top-actions{justify-self:stretch}
+  .top-actions>button{flex:1 1 0;width:auto!important;min-width:0}
+}
+@media(max-width:560px){
+  .app{padding-top:max(6px,env(safe-area-inset-top));padding-bottom:max(6px,env(safe-area-inset-bottom))}
+  .player-card{padding:6px 8px}
+  .dock{padding:8px}
+  .modal{padding:18px}
+  .theme-backdrop{align-items:flex-end;padding:0}
+  .sheet{width:100%;border-radius:18px 18px 0 0;padding-bottom:max(18px,env(safe-area-inset-bottom))}
+}
+
+/* short screens: phones held sideways */
+@media(max-height:500px){
+  :root{--hw:30px;--bh:30px;--dt:24px}
+  .app{padding-top:max(4px,env(safe-area-inset-top));padding-bottom:max(4px,env(safe-area-inset-bottom));gap:4px}
+  .topbar{grid-template-columns:auto minmax(0,1fr) auto;grid-template-areas:"title segs actions" "score score score";gap:4px 10px;align-items:center}
+  .brand h1{display:block;font-size:16px}
+  .seg-row{justify-content:center}.seg-row .mode-seg{flex:0 0 auto}.seg-row .mode-seg button{flex:0 0 auto;overflow:visible;text-overflow:clip;padding:4px 9px}
+  .top-actions{justify-self:end}.top-actions>button{flex:0 0 auto;width:36px!important}
+  #rulesBtn,#newGameBtn,#soundBtn,#themeBtn,#langBtn{display:inline-flex;align-items:center;justify-content:center;padding:0;min-height:32px;line-height:1}
+  #rulesBtn,#newGameBtn{font-size:0}#soundBtn,#themeBtn{font-size:14px}#langBtn{font-size:12px}
+  #rulesBtn:before{content:"?";font-size:16px}#newGameBtn:before{content:"↻";font-size:18px}
+  .scorebar,.scorebar4{width:min(100%,560px);justify-self:center}
+  .player-card{padding:2px 10px}.score-card{padding:2px 12px;min-width:96px}.score{font-size:20px}.score-card small,.score-caption{font-size:10px}
+  .count b{font-size:17px}.player-info{display:none}.player-card{justify-content:center}
+  .chip{padding:3px 6px 6px}.chip-score{font-size:18px;margin-top:0}.sb4-head{padding:2px 12px}
+  .opponent-area{height:var(--bh)}
+  .dock{grid-template-columns:minmax(96px,150px) minmax(0,1fr);gap:8px;padding:6px 10px}
+  .draw-zone{display:flex;flex-direction:column;gap:4px}
+  .draw-zone .zone-head{display:flex;min-height:14px}.draw-table{flex-wrap:wrap;height:auto;flex:1;min-height:0;padding:5px 6px;gap:3px;align-content:center}
+  .draw-tile{flex:0 0 calc(var(--dt)*.6);width:calc(var(--dt)*.6);max-width:none;height:var(--dt)}
+  .draw-area-label{display:none}
+  .hand-zone{padding-left:10px;border-left:1px solid var(--line);gap:3px}
+  .app[data-mode="4p"] .hand-zone{padding-left:0;border-left:0}
+  .hand{padding:8px 4px 8px;min-height:calc(var(--hw)*1.9 + 10px)}
+  .play-actions{height:auto;min-height:24px}.play-actions .hint{white-space:normal;font-size:11px;line-height:1.25}
+  .play-actions button{padding:5px 10px;min-height:28px}
+  .board{padding:6px 10px;border-width:7px;border-radius:16px}
+  .app[data-mode="4p"]{--side:clamp(60px,9vw,90px)}
+  .app[data-mode="4p"] .opp-seat[data-seat="2"]{height:var(--bh)}
+}
+@media(max-height:500px) and (max-width:699px){
+  .seg-row .mode-seg button{padding:4px 6px;font-size:11px}
+}
+@media(max-height:500px){
+  .sheet{width:min(680px,100%);padding:12px 16px 14px}
+  .sheet-head h2{font-size:18px}.sheet-x{width:34px;height:34px}
+  .swatches{grid-template-columns:repeat(6,minmax(0,1fr));gap:6px}
+  .sw{min-height:58px;padding:6px 2px;gap:5px;font-size:11px}
+  .sheet h3{margin:8px 0 6px}.sheet-done{margin-top:10px;padding:9px}
+  .sw-felt{width:40px;height:24px}.sw-tile{width:18px;height:30px;padding:4px 0}
+  .sb4-head{display:none}
+  .chip{padding:3px 6px 5px;display:flex;align-items:center;justify-content:center;gap:8px}
+  .chip-meta{display:none}.chip-name{font-size:11px}.chip-score{margin:0;font-size:18px}
+}
+@media(max-height:360px){
+  .brand h1{display:none}.topbar{grid-template-areas:"segs segs actions" "score score score"}
+}
+.toast,.modal p,.modal h2,.status-note,.play-actions .hint,.empty-board,.opponent-hand-caption,.draw-area-label{unicode-bidi:plaintext}
 @media(max-height:520px){.status-row{display:none}}
 @media(prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+
+/* ===== v21 visual polish ===== */
+html{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+body{background:radial-gradient(ellipse 90% 55% at 50% -8%,#7a4e2c 0,transparent 66%),radial-gradient(ellipse 70% 45% at 50% 115%,#4a2c18 0,transparent 70%),repeating-linear-gradient(90deg,#0000 0 58px,#00000010 58px 59px),linear-gradient(#2c1c12,#110a06);background-color:#110a06}
+.brand h1{background:linear-gradient(#fff4cf,#e2b45c 55%,#b27f2b);-webkit-background-clip:text;background-clip:text;color:transparent;letter-spacing:.5px;filter:drop-shadow(0 2px 6px #000a)}
+.logo{filter:drop-shadow(0 5px 7px #000b)}
+.scorebar,.scorebar4{background:linear-gradient(#34261b,#1a110b);border-color:#74512f;box-shadow:0 12px 30px #000b,inset 0 1px 0 #ffffff22,0 0 0 1px #0007}
+.score-card{background:linear-gradient(#0000004a,#00000020)}
+.score{background:linear-gradient(#fffdf2,#ecd9a8);-webkit-background-clip:text;background-clip:text;color:transparent;text-shadow:none}
+.player-card.active,.chip.active{background:linear-gradient(#fff0,#ffffff18)}
+.player-card.you.active:after,.player-card.ai.active:after,.chip.active:after{box-shadow:0 0 12px currentColor}
+.ghost{background:linear-gradient(#ffffff12,#ffffff04);border-color:#5d4129}
+.ghost:hover:not(:disabled){background:linear-gradient(#ffffff22,#ffffff0a);transform:translateY(-1px)}
+.primary{border:1px solid #fff5;text-shadow:0 1px 0 #fff7;box-shadow:inset 0 1px 0 #fffa,0 4px 14px #d9a64a45}
+.mode-seg{background:#00000048;border-color:#5d4129;box-shadow:inset 0 1px 3px #0008}
+.board{box-shadow:inset 0 0 90px #000c,inset 0 0 0 1px #0009,inset 0 0 0 3px #f3d38e1f,0 20px 40px #000c}
+.board:before{border-color:#f3d38e44}
+.chain-end{background:linear-gradient(#0a1c15f0,#050f0af0);border-color:#d9a64a88}
+.domino{background:linear-gradient(158deg,#fffef6,#f7eed4 42%,#e5d9b6);border-color:#c8bb94;box-shadow:inset 0 1px 0 #fff,inset 0 -2px 3px #b3a57c33,0 2px 0 #b1a47d,0 7px 10px #000c}
+.pip{background:radial-gradient(circle at 34% 28%,#666,#020202 68%);box-shadow:inset 0 -1px 1px #ffffff45,0 .6px 0 #ffffffb0}
+.domino:before{background:radial-gradient(circle at 35% 30%,#fff1b8,#b98a2f 60%,#7a5614);box-shadow:0 1px 2px #0008,0 0 0 1px #5a3f0f55}
+.opponent-back,.draw-tile{background:repeating-linear-gradient(135deg,#ffffff10 0 2px,#0000 2px 6px),linear-gradient(160deg,#3a312c,#120d0b);border-color:#a47a38;box-shadow:0 5px 10px #000b,inset 0 0 0 2px #ffffff10,inset 0 1px 0 #ffffff25}
+.dock{background:linear-gradient(#3a2a1d,#1a110b);border-color:#74512f;box-shadow:0 -8px 28px #0007,inset 0 1px 0 #ffffff1c}
+.draw-table{background:linear-gradient(#090504d0,#140c08c0);box-shadow:inset 0 3px 10px #000c,0 1px 0 #ffffff12}
+.hand:after{height:16px;background:linear-gradient(#a66f40,#6c4524 52%,#3d240f);box-shadow:0 6px 14px #000c,inset 0 1px 0 #ffffff4d,inset 0 -2px 3px #0007}
+.hand-tile.playable-tile .domino{box-shadow:0 2px 0 #bdb08a,0 0 0 2px #f2c76fcc,0 0 18px #f2c76f88,0 9px 14px #000a}
+.hand-tile.selected .domino{outline-color:#ffd77a;box-shadow:0 0 0 2px #ffd77a,0 0 22px #ffd77aaa,0 12px 18px #000b}
+.zone-head h2{letter-spacing:.3px}
+.modal{background:linear-gradient(#3a2a1d,#1b120c);border-color:#b98a3e;box-shadow:0 34px 90px #000d,0 0 0 1px #000a,0 0 70px #d9a64a24,inset 0 1px 0 #ffffff22}
+.modal-backdrop.show .modal{animation:modalPop .38s cubic-bezier(.2,.9,.25,1) both}
+.modal-icon{filter:drop-shadow(0 4px 10px #0009)}
+.toast{background:linear-gradient(#f8dfa0,#e2b45c);box-shadow:0 10px 32px #000b,inset 0 1px 0 #fff9}
+@keyframes modalPop{0%{opacity:0;transform:translateY(18px) scale(.94)}100%{opacity:1;transform:none}}
+
+/* ===== v22 visual polish ===== */
+.board:before{z-index:0;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Cg transform='rotate(-20 60 60)' fill='none' stroke='%23f3d38e' stroke-opacity='.14' stroke-width='2'%3E%3Crect x='36' y='12' width='48' height='96' rx='10'/%3E%3Cline x1='42' y1='60' x2='78' y2='60'/%3E%3C/g%3E%3Cg transform='rotate(-20 60 60)' fill='%23f3d38e' fill-opacity='.14'%3E%3Ccircle cx='50' cy='30' r='4'/%3E%3Ccircle cx='70' cy='42' r='4'/%3E%3Ccircle cx='60' cy='36' r='4'/%3E%3Ccircle cx='50' cy='80' r='4'/%3E%3Ccircle cx='70' cy='80' r='4'/%3E%3Ccircle cx='50' cy='92' r='4'/%3E%3Ccircle cx='70' cy='92' r='4'/%3E%3C/g%3E%3C/svg%3E") center/min(36%,300px) no-repeat}
+.board-scroll{position:relative;z-index:1}
+.score span.bump{filter:drop-shadow(0 0 9px #f3d38e)}
+.player-card.active:after,.chip.active:after{animation:barPulse 1.5s ease-in-out infinite alternate}
+@keyframes barPulse{from{opacity:.5}to{opacity:1}}
+.opp-seat.active{box-shadow:inset 0 -3px 0 var(--pc),0 0 22px color-mix(in srgb,var(--pc) 30%,transparent)}
+.hand-tile .domino{box-shadow:0 2px 0 #b1a47d,0 8px 12px #000b}
+html[data-tiles="ebony"] .domino{background:linear-gradient(158deg,#44444a,#1e1e23 45%,#0d0d10);border-color:#58585f;box-shadow:inset 0 1px 0 #ffffff30,inset 0 -2px 3px #00000070,0 2px 0 #040406,0 7px 10px #000c;color:#eee}
+html[data-tiles="ebony"] .domino:after{background:#d9a64a;box-shadow:0 1px 0 #0009}
+html[data-tiles="ebony"] .domino.horizontal:after{box-shadow:1px 0 0 #0009}
+html[data-tiles="ebony"] .pip{background:radial-gradient(circle at 34% 28%,#fff7d8,#e0b04e 62%,#8a6420);box-shadow:0 1px 2px #000b}
+html[data-tiles="ebony"] .hand-tile.playable-tile .domino{box-shadow:0 2px 0 #040406,0 0 0 2px #f2c76fcc,0 0 18px #f2c76f88,0 9px 14px #000a}
+html[data-tiles="jade"] .domino{background:linear-gradient(158deg,#6fe0b2,#33a27c 45%,#1b6a52);border-color:#1b5a46;box-shadow:inset 0 1px 0 #ffffff70,inset 0 -2px 3px #0a3a2c66,0 2px 0 #0f4535,0 7px 10px #000c}
+html[data-tiles="jade"] .domino:after{background:#0f4535;box-shadow:0 1px 0 #ffffff55}
+html[data-tiles="jade"] .domino.horizontal:after{box-shadow:1px 0 0 #ffffff55}
+html[data-tiles="jade"] .pip{background:radial-gradient(circle at 34% 28%,#fffef2,#efe6c4 65%,#bcae82);box-shadow:0 1px 2px #0a3a2ccc}
+html[data-tiles="jade"] .hand-tile.playable-tile .domino{box-shadow:0 2px 0 #0f4535,0 0 0 2px #f2c76fcc,0 0 18px #f2c76f88,0 9px 14px #000a}
 </style>
 </head>
 <body>
@@ -185,7 +362,7 @@ button:focus-visible{outline:3px solid var(--brass-hi);outline-offset:2px}button
   <header class="topbar">
     <div class="brand">
       <svg class="logo" viewBox="0 0 30 44" aria-hidden="true"><rect x="1" y="1" width="28" height="42" rx="6" fill="#f4ecd8" stroke="#bdb08a"/><line x1="5" y1="22" x2="25" y2="22" stroke="#8d8670"/><circle cx="15" cy="22" r="2.4" fill="#d9a64a"/><g fill="#111"><circle cx="9" cy="8" r="2.2"/><circle cx="21" cy="14" r="2.2"/><circle cx="15" cy="11" r="2.2"/><circle cx="9" cy="32" r="2.2"/><circle cx="21" cy="32" r="2.2"/><circle cx="9" cy="38" r="2.2"/><circle cx="21" cy="38" r="2.2"/></g></svg>
-      <div><h1>Domino Duel</h1><div class="seg-row"><div class="mode-seg" id="modeSeg" role="group" aria-label="Game mode"><button type="button" data-mode="2p" aria-pressed="true">2 players</button><button type="button" data-mode="4p" aria-pressed="false">4 players</button></div><div class="mode-seg" id="diffSeg" role="group" aria-label="AI difficulty"><button type="button" data-diff="easy" aria-pressed="false">Easy</button><button type="button" data-diff="medium" aria-pressed="false">Medium</button><button type="button" data-diff="hard" aria-pressed="true">Hard</button></div></div></div>
+      <div class="brand-text"><h1>Domino Duel</h1><div class="seg-row"><div class="mode-seg" id="modeSeg" role="group" aria-label="Game mode"><button type="button" data-mode="2p" aria-pressed="true">2 players</button><button type="button" data-mode="4p" aria-pressed="false">4 players</button></div><div class="mode-seg" id="diffSeg" role="group" aria-label="AI difficulty"><button type="button" data-diff="easy" aria-pressed="false">Easy</button><button type="button" data-diff="medium" aria-pressed="false">Medium</button><button type="button" data-diff="hard" aria-pressed="true">Hard</button></div></div></div>
     </div>
     <section class="scorebar" aria-label="Score and players">
       <div class="player-card ai" id="aiCard"><div class="player-info"><strong>Strategic AI</strong><span id="aiState">Thinking ahead</span></div><div class="count"><b id="aiCount">7</b><span id="aiCountLabel">tiles</span></div></div>
@@ -193,7 +370,7 @@ button:focus-visible{outline:3px solid var(--brass-hi);outline-offset:2px}button
       <div class="player-card you" id="youCard"><div class="player-info"><strong>You</strong><span id="humanState">Your turn</span></div><div class="count"><b id="humanCount">7</b><span id="humanCountLabel">tiles</span></div></div>
     </section>
     <section class="scorebar4" id="scorebar4" aria-label="Scores and players"></section>
-    <div class="top-actions"><button class="ghost" id="rulesBtn">How to play</button><button class="primary" id="newGameBtn">↻ New game</button></div>
+    <div class="top-actions"><button class="ghost" id="soundBtn" aria-pressed="true" title="Sound on/off (M)">🔊</button><button class="ghost" id="themeBtn" title="Appearance (C)" aria-haspopup="dialog" aria-label="Appearance">🎨</button><button class="ghost" id="langBtn" title="Language / اللغة">ع</button><button class="ghost" id="rulesBtn">How to play</button><button class="primary" id="newGameBtn">↻ New game</button></div>
   </header>
 
   <main class="stage">
@@ -219,11 +396,22 @@ button:focus-visible{outline:3px solid var(--brass-hi);outline-offset:2px}button
 <div class="modal-backdrop" id="modalBackdrop" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
   <div class="modal"><div class="modal-icon" id="modalIcon">🏆</div><h2 id="modalTitle">Round complete</h2><p id="modalText"></p><button class="primary" id="nextRoundBtn">Play next round</button></div>
 </div>
+<div class="modal-backdrop theme-backdrop" id="themeBackdrop">
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="themeTitle">
+    <div class="sheet-head"><h2 id="themeTitle">Appearance</h2><button type="button" class="sheet-x" id="themeClose" aria-label="Close">✕</button></div>
+    <h3>Table color</h3>
+    <div class="swatches" id="feltSwatches" role="group" aria-label="Table color"></div>
+    <h3>Tile style</h3>
+    <div class="swatches" id="tileSwatches" role="group" aria-label="Tile style"></div>
+    <button type="button" class="primary sheet-done" id="themeDone">Done</button>
+  </div>
+</div>
 <div class="toast" id="toast" role="status"></div>
 
 <script>
 (() => {
   const $ = id => document.getElementById(id);
+  const LANG = (() => { try { return localStorage.getItem('dominoDuelLang') === 'ar' ? 'ar' : 'en'; } catch (_) { return 'en'; } })();
   const HAND_SIZE = 7;
   // Seat 0 is always the human. Turn order runs 0 → 1 → 2 → 3 → 0 … (counterclockwise around the table in 4p)
   const MODES = {
@@ -237,7 +425,7 @@ button:focus-visible{outline:3px solid var(--brass-hi);outline-offset:2px}button
     dealing: false, lastTile: null, snakeMeta: null
   };
   let draggingHandIndex = null;
-  const cfg = () => MODES[state.mode];
+  const cfg = () => ({...MODES[state.mode], target: MODES[state.mode].target});
   const N = () => cfg().n;
   const nameOf = s => cfg().names[s];
   const subject = s => s === 0 ? 'You' : nameOf(s);
@@ -470,7 +658,7 @@ button:focus-visible{outline:3px solid var(--brass-hi);outline-offset:2px}button
       b.addEventListener('dragend', () => { draggingHandIndex = null; markEnds(); shiftHand(null); b.classList.remove('dragging'); hand.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over')); });
       hand.appendChild(b);
     });
-    $('handHint').textContent = state.selected === null ? 'Choose a tile to see legal moves' : `Selected ${tileLabel(H[state.selected])}`;
+    $('handHint').textContent = (state.selected === null ? 'Choose a tile to see legal moves' : `Selected ${tileLabel(H[state.selected])}`) + ` · ${pipTotal(H)} pips in hand`;
   }
 
   function renderActions() {
@@ -526,7 +714,8 @@ button:focus-visible{outline:3px solid var(--brass-hi);outline-offset:2px}button
 
   // Procedural close-up domino clack: a short, layered wooden/resin impact.
   // Audio is unlocked by the first user gesture; if audio is unavailable, gameplay is unaffected.
-  let dominoAudio = null;
+  let dominoAudio = null, muted = false;
+  try { muted = localStorage.getItem('dominoDuelMuted') === '1'; } catch (_) {}
   function unlockDominoAudio() {
     if (dominoAudio) return;
     const AudioCtx = window.AudioContext || window.webkitAudioContext;
@@ -537,7 +726,7 @@ button:focus-visible{outline:3px solid var(--brass-hi);outline-offset:2px}button
     } catch (_) { dominoAudio = null; }
   }
   function playDominoLandSound() {
-    if (!dominoAudio) return;
+    if (!dominoAudio || muted) return;
     if (dominoAudio.state === 'suspended') dominoAudio.resume().catch(() => {});
     const ctx = dominoAudio;
     const now = ctx.currentTime;
@@ -584,7 +773,7 @@ button:focus-visible{outline:3px solid var(--brass-hi);outline-offset:2px}button
   }
   // A soft paper/resin-like flick for drawing a face-down domino from the pile.
   function playDrawSound() {
-    if (!dominoAudio) return;
+    if (!dominoAudio || muted) return;
     const ctx = dominoAudio, now = ctx.currentTime;
     try {
       // Two quick, slightly papery contacts: a low body tap followed by a crisp edge flick.
@@ -605,7 +794,7 @@ button:focus-visible{outline:3px solid var(--brass-hi);outline-offset:2px}button
   }
 
   function playVictoryTones(notes, master = 0.12) {
-    if (!dominoAudio) return;
+    if (!dominoAudio || muted) return;
     const ctx = dominoAudio, now = ctx.currentTime;
     try {
       notes.forEach(([freq, start, duration]) => {
@@ -994,7 +1183,7 @@ button:focus-visible{outline:3px solid var(--brass-hi);outline-offset:2px}button
     if (state.matchOver) {
       const top = Math.max(...state.scores), leaders = state.scores.map((s, i) => s === top ? i : -1).filter(i => i >= 0);
       const champ = leaders.includes(winner) ? winner : leaders[0];
-      matchWinner = champ;
+      matchWinner = champ; recordMatch(champ === 0);
       const finalScore = two ? `${state.scores[0]} : ${state.scores[1]}` : state.scores.map((s, i) => `${nameOf(i)} ${s}`).join(', ');
       if (champ === 0) { title = '🏆 You won the match!'; text = `You reached ${state.scores[0]} points and won the match! Final score: ${finalScore}.`; icon = '🏆'; }
       else { title = two ? 'AI won the match' : `${nameOf(champ)} won the match`; text = `${two ? 'The AI' : nameOf(champ)} reached ${state.scores[champ]} points and won the match. Final score: ${finalScore}.`; icon = '🤖'; }
@@ -1007,11 +1196,30 @@ button:focus-visible{outline:3px solid var(--brass-hi);outline-offset:2px}button
       $('modalIcon').textContent = icon; $('modalTitle').textContent = title; $('modalText').textContent = text;
       $('nextRoundBtn').textContent = state.matchOver ? 'Start a new match' : 'Play next round'; $('modalBackdrop').classList.add('show');
       if (state.matchOver) {
-        if (matchWinner === 0) playMatchWinSound();
+        if (matchWinner === 0) { playMatchWinSound(); launchConfetti(160); }
         else playMatchLossSound();
-      } else if (winner === 0) playRoundWinSound();
+      } else if (winner === 0) { playRoundWinSound(); launchConfetti(70); }
       else if (winner !== null) playRoundLossSound();
     }, 3000);
+  }
+  // Celebration: confetti falls over the screen when you win a round (bigger for a match).
+  function launchConfetti(count) {
+    if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const colors = ['#f3d38e', '#d9a64a', '#93d5a0', '#8db9e6', '#e6c07a', '#d6a0e6', '#ffffff'];
+    const layer = document.createElement('div');
+    layer.style.cssText = 'position:fixed;inset:0;z-index:70;pointer-events:none;overflow:hidden';
+    document.body.appendChild(layer);
+    for (let i = 0; i < count; i++) {
+      const p = document.createElement('i'), w = 6 + Math.random() * 7, h = w * (1.3 + Math.random());
+      p.style.cssText = `position:absolute;top:-20px;left:${Math.random() * 100}%;width:${w}px;height:${h}px;background:${colors[i % colors.length]};border-radius:${Math.random() < .3 ? '50%' : '2px'}`;
+      layer.appendChild(p);
+      const drift = (Math.random() - .5) * 220, spin = (Math.random() - .5) * 1080, dur = 1800 + Math.random() * 1700;
+      p.animate([
+        {transform: 'translate3d(0,0,0) rotate(0deg)', opacity: 1},
+        {transform: `translate3d(${drift}px,${innerHeight + 40}px,0) rotate(${spin}deg)`, opacity: .9}
+      ], {duration: dur, delay: Math.random() * 500, easing: 'cubic-bezier(.3,.5,.6,1)', fill: 'forwards'});
+    }
+    setTimeout(() => layer.remove(), 4200);
   }
   function finishBlocked() { if (state.gameOver) return; log('Nobody can play and the draw pile is empty.'); finishRound(null, 'blocked'); }
 
@@ -1048,15 +1256,84 @@ button:focus-visible{outline:3px solid var(--brass-hi);outline-offset:2px}button
     document.querySelectorAll('#diffSeg button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.diff === state.difficulty)));
     document.title = state.mode === '2p' ? 'Domino Duel — 1v1' : 'Domino Duel — 4 players';
   }
+  // ---- Saved stats (matches won / lost) ----------------------------------------------------
+  function loadStats() { try { const s = JSON.parse(localStorage.getItem('dominoDuelStats') || '{}'); return {won: s.won | 0, lost: s.lost | 0}; } catch (_) { return {won: 0, lost: 0}; } }
+  function recordMatch(won) { const s = loadStats(); if (won) s.won++; else s.lost++; try { localStorage.setItem('dominoDuelStats', JSON.stringify(s)); } catch (_) {} }
+  const TILE_STYLES = ['ivory', 'ebony', 'jade', 'ruby', 'azure'];
+  function applyTiles(t) { document.documentElement.dataset.tiles = t; }
+  function chooseTiles(t) {
+    if (!TILE_STYLES.includes(t)) return;
+    applyTiles(t); try { localStorage.setItem('dominoDuelTiles', t); } catch (_) {}
+    syncTheme();
+  }
+  const FELTS = ['green', 'blue', 'red', 'purple', 'charcoal', 'amber'];
+  function applyFelt(f) { $('app').dataset.felt = f; }
+  function chooseFelt(f) {
+    if (!FELTS.includes(f)) return;
+    applyFelt(f); try { localStorage.setItem('dominoDuelFelt', f); } catch (_) {}
+    syncTheme();
+  }
+  // ---- Appearance menu: table colour + tile style in one place ------------------------------
+  const FELT_INFO = {
+    green: ['Green', 'radial-gradient(ellipse at 50% 40%,#2b8259,#1d6b4b 50%,#0d382a)'],
+    blue: ['Blue', 'radial-gradient(ellipse at 50% 40%,#2f6fa8,#1f5282 50%,#0d2b4a)'],
+    red: ['Burgundy', 'radial-gradient(ellipse at 50% 40%,#9a2f3e,#74212d 50%,#3d0f17)'],
+    purple: ['Purple', 'radial-gradient(ellipse at 50% 40%,#7a4aa8,#57307f 50%,#2b1545)'],
+    charcoal: ['Charcoal', 'radial-gradient(ellipse at 50% 40%,#4a4f57,#32363c 50%,#16181b)'],
+    amber: ['Amber', 'radial-gradient(ellipse at 50% 40%,#c88a2c,#9a6218 50%,#53330a)']
+  };
+  const TILE_INFO = {
+    ivory: ['Ivory', 'linear-gradient(165deg,#fffbef,#f2e9d0 55%,#e2d6b4)', '#111'],
+    ebony: ['Ebony', 'linear-gradient(158deg,#44444a,#1e1e23 45%,#0d0d10)', '#e0b04e'],
+    jade: ['Jade', 'linear-gradient(158deg,#6fe0b2,#33a27c 45%,#1b6a52)', '#f4ecd0'],
+    ruby: ['Ruby', 'linear-gradient(158deg,#f0788a,#c0344c 45%,#7a1426)', '#f4ecd0'],
+    azure: ['Azure', 'linear-gradient(158deg,#78bdf6,#2f7fcc 45%,#194a86)', '#f4ecd0']
+  };
+  function buildThemeMenu() {
+    const mk = (box, info, kind, choose) => {
+      box.innerHTML = '';
+      Object.keys(info).forEach(key => {
+        const b = document.createElement('button'); b.type = 'button'; b.className = 'sw'; b.dataset.key = key;
+        const v = info[key];
+        b.innerHTML = kind === 'felt'
+          ? `<span class="sw-felt" style="--sbg:${v[1]}"></span><span>${v[0]}</span>`
+          : `<span class="sw-tile" style="--sbg:${v[1]};--spip:${v[2]}"><i></i><i></i></span><span>${v[0]}</span>`;
+        b.addEventListener('click', () => choose(key));
+        box.appendChild(b);
+      });
+    };
+    mk($('feltSwatches'), FELT_INFO, 'felt', chooseFelt);
+    mk($('tileSwatches'), TILE_INFO, 'tile', chooseTiles);
+    syncTheme();
+  }
+  function syncTheme() {
+    const f = $('app').dataset.felt, t = document.documentElement.dataset.tiles;
+    $('feltSwatches').querySelectorAll('.sw').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.key === f)));
+    $('tileSwatches').querySelectorAll('.sw').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.key === t)));
+  }
+  const themeOpen = () => $('themeBackdrop').classList.contains('show');
+  function openTheme() { syncTheme(); $('themeBackdrop').classList.add('show'); $('themeDone').focus({preventScroll: true}); }
+  function closeTheme() { $('themeBackdrop').classList.remove('show'); $('themeBtn').focus({preventScroll: true}); }
+  function toggleSound() {
+    muted = !muted; try { localStorage.setItem('dominoDuelMuted', muted ? '1' : '0'); } catch (_) {}
+    $('soundBtn').textContent = muted ? '🔇' : '🔊'; $('soundBtn').setAttribute('aria-pressed', String(!muted));
+    toast(muted ? 'Sound off.' : 'Sound on.');
+  }
   function setMode(mode) {
     if (!MODES[mode] || mode === state.mode) return;
-    state.mode = mode; applyModeUI(); newRound(true);
+    state.mode = mode; try { localStorage.setItem('dominoDuelMode', mode); } catch (_) {} applyModeUI(); newRound(true);
     toast(mode === '4p' ? 'New 4-player game — 7 tiles each, no draw pile.' : 'New 2-player game.');
   }
   function rulesText() {
+    if (LANG === 'ar') {
+      const tip = 'نصيحة: اضغط M لكتم الصوت، C لتغيير لون الطاولة، T لتغيير شكل القطع. ';
+      const common = ' يبدأ صاحب أعلى مزدوج؛ وإن لم يوجد مزدوج تبدأ القطعة الأعلى نقاطاً. يُعاد خلط التوزيع حتى لا يملك أي لاعب أكثر من خمس قطع تحتوي على الرقم نفسه.';
+      if (state.mode === '4p') return `${tip}أربعة لاعبين (أنت وثلاثة من الكمبيوتر)، لكل واحد 7 قطع وبدون كومة سحب. العب قطعة تطابق أحد الطرفين المفتوحين، وإن لم تستطع يمر دورك تلقائياً. أول من يفرغ يده يفوز بالجولة ويأخذ كل النقاط المتبقية في أيدي الثلاثة الآخرين. إذا لم يستطع أحد اللعب فصاحب أقل مجموع نقاط يفوز بالجولة (والتعادل في الأقل لا يمنح نقاطاً). الأول الذي يصل إلى ${cfg().target} نقطة يفوز بالمباراة.${common}`;
+      return `${tip}العب قطعة تطابق أحد الطرفين المفتوحين. إن لم تكن لديك قطعة قابلة للعب تُسحب لك القطع تلقائياً حتى تجد واحدة أو تنتهي الكومة، وإن لم تستطع اللعب يمر دورك. إذا لم يستطع أحد اللعب والكومة فارغة فصاحب أقل مجموع نقاط متبقية يفوز بالجولة ويأخذ كل نقاط يد الخصم. الأول الذي يصل إلى ${cfg().target} نقطة يفوز بالمباراة.${common}`;
+    }
     const common = 'The highest double in the opening hands starts; if there are no doubles, the highest-pip tile starts. The opening deal is reshuffled until each player has at most five tiles containing any given number.';
     if (state.mode === '4p') return `Four players (you and three AIs) each get 7 tiles, and there is no draw pile. Play a tile that matches either open end; if you can’t, your turn passes automatically. The first player to empty their hand wins the round and scores all pips left in the other three hands. If nobody can play, the lowest remaining pip total wins the round and scores the pips left in the other hands (a tie for lowest scores nothing). First to ${cfg().target} points wins the match. ${common}`;
-    return `Play a tile that matches either open end. If you have no playable tile, tiles are drawn for you automatically until you find one or the pile is empty; if you still can’t play, your turn passes. If no one can play with an empty pile, the player with the lower remaining pip total wins the round and scores all pips left in the opponent hand. First to ${cfg().target} points wins the match. ${common}`;
+    return `Tip: press M to mute, C to change the table color, T to change the tiles. Play a tile that matches either open end. If you have no playable tile, tiles are drawn for you automatically until you find one or the pile is empty; if you still can’t play, your turn passes. If no one can play with an empty pile, the player with the lower remaining pip total wins the round and scores all pips left in the opponent hand. First to ${cfg().target} points wins the match. ${common}`;
   }
   function toast(message) { const el = $('toast'); el.textContent = message; el.classList.add('show'); clearTimeout(toast.timer); toast.timer = setTimeout(() => el.classList.remove('show'), 2100); }
 
@@ -1125,7 +1402,25 @@ button:focus-visible{outline:3px solid var(--brass-hi);outline-offset:2px}button
   }));
   try { const d = localStorage.getItem('dominoDuelDifficulty'); if (d === 'easy' || d === 'medium' || d === 'hard') state.difficulty = d; } catch (_) {}
   $('newGameBtn').addEventListener('click', () => newRound(true));
-  $('rulesBtn').addEventListener('click', () => { $('modalIcon').textContent = '📘'; $('modalTitle').textContent = 'How to play'; $('modalText').textContent = rulesText(); $('nextRoundBtn').textContent = 'Back to game'; $('modalBackdrop').classList.add('show'); });
+  $('soundBtn').addEventListener('click', toggleSound);
+  $('themeBtn').addEventListener('click', openTheme);
+  $('themeClose').addEventListener('click', closeTheme);
+  $('themeDone').addEventListener('click', closeTheme);
+  $('themeBackdrop').addEventListener('click', e => { if (e.target === $('themeBackdrop')) closeTheme(); });
+  try { const t = localStorage.getItem('dominoDuelTiles'); applyTiles(TILE_STYLES.includes(t) ? t : 'ivory'); } catch (_) { applyTiles('ivory'); }
+  try { const f = localStorage.getItem('dominoDuelFelt'); applyFelt(FELTS.includes(f) ? f : 'green'); } catch (_) { applyFelt('green'); }
+  buildThemeMenu();
+  $('soundBtn').textContent = muted ? '🔇' : '🔊'; $('soundBtn').setAttribute('aria-pressed', String(!muted));
+  window.addEventListener('keydown', e => {
+    if (e.ctrlKey || e.metaKey || e.altKey || /input|textarea/i.test(e.target.tagName)) return;
+    const k = e.key.toLowerCase();
+    if (k === 'escape' && themeOpen()) { closeTheme(); return; }
+    if (themeOpen()) return;
+    if (k === 'm') toggleSound(); else if (k === 'c' || k === 't') openTheme();
+    else if (k === 'escape') { if (state.selected !== null && !state.animating) { state.selected = null; render(); } }
+  });
+  try { const m = localStorage.getItem('dominoDuelMode'); if (m && MODES[m]) state.mode = m; } catch (_) {}
+  $('rulesBtn').addEventListener('click', () => { const st = loadStats(); $('modalIcon').textContent = '📘'; $('modalTitle').textContent = 'How to play'; $('modalText').textContent = rulesText() + (LANG === 'ar' ? `  سجلك: فزت بـ ${st.won} وخسرت ${st.lost} من المباريات.` : `  Your record: ${st.won} match${st.won === 1 ? '' : 'es'} won, ${st.lost} lost.`); $('nextRoundBtn').textContent = 'Back to game'; $('modalBackdrop').classList.add('show'); });
   $('modalBackdrop').addEventListener('click', e => {
     // A completed round must always leave the result dialog available.
     // The player can continue only through the explicit next-round button.
@@ -1136,6 +1431,112 @@ button:focus-visible{outline:3px solid var(--brass-hi);outline-offset:2px}button
     if (state.gameOver) { if (state.matchOver) { newRound(true); } else { state.round++; newRound(false); } }
   });
   let rz; window.addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => { if (!state.animating && state.chain.length) renderBoard(); }, 150); });
+
+  // ---- Arabic interface: translates the visible text; the game logic stays untouched --------
+  $('langBtn').textContent = LANG === 'ar' ? 'EN' : 'ع';
+  $('langBtn').addEventListener('click', () => {
+    try { localStorage.setItem('dominoDuelLang', LANG === 'ar' ? 'en' : 'ar'); } catch (_) {}
+    location.reload();
+  });
+  if (LANG === 'ar') {
+    const D = {
+      'Appearance': 'المظهر', 'Table color': 'لون الطاولة', 'Tile style': 'شكل القطع', 'Done': 'تم',
+      'Green': 'أخضر', 'Blue': 'أزرق', 'Burgundy': 'عنابي', 'Purple': 'بنفسجي', 'Charcoal': 'فحمي', 'Amber': 'كهرماني',
+      'Ivory': 'عاجي', 'Ebony': 'أبنوس', 'Jade': 'يشم', 'Ruby': 'ياقوتي', 'Azure': 'لازوردي',
+      '2 players': 'لاعبان', '4 players': '4 لاعبين', 'Easy': 'سهل', 'Medium': 'متوسط', 'Hard': 'صعب',
+      'How to play': 'طريقة اللعب', '↻ New game': '↻ لعبة جديدة',
+      'Draw pile': 'كومة السحب', 'Your hand': 'يدك', 'Strategic AI': 'الذكاء الاصطناعي', 'You': 'أنت',
+      'Thinking ahead': 'يفكر مسبقاً', 'Observing the board': 'يراقب الطاولة', 'Calculating move': 'يحسب حركته',
+      'Your turn': 'دورك', 'Waiting': 'ينتظر', 'AI turn': 'دور الكمبيوتر', 'Round complete': 'انتهت الجولة',
+      'tiles': 'قطع', 'tile': 'قطعة', 'passed': 'تجاوز',
+      'Ready to play?': 'مستعد للعب؟', 'The highest double starts the round.': 'أعلى مزدوج يبدأ الجولة.',
+      'Left end': 'الطرف الأيسر', 'Right end': 'الطرف الأيمن',
+      'Select a tile that matches either open end.': 'اختر قطعة تطابق أحد الطرفين المفتوحين.',
+      'Drag a tile next to the table tile you want to play beside.': 'اسحب قطعة بجانب قطعة الطاولة التي تريد اللعب عندها.',
+      'Drag a playable tile and attach it to the table tile you want to play beside.': 'اسحب قطعة قابلة للعب وضعها بجانب القطعة التي تريدها على الطاولة.',
+      'The AI is evaluating the board…': 'الكمبيوتر يدرس الطاولة…', 'The AI is considering its next move…': 'الكمبيوتر يفكر في حركته…',
+      'Check the result and start another round.': 'شاهد النتيجة وابدأ جولة أخرى.',
+      'Round complete. Start the next round to continue.': 'انتهت الجولة. ابدأ الجولة التالية للمتابعة.',
+      'Your tiles are shown face-up only to you.': 'قطعك ظاهرة لك وحدك.',
+      'Choose a tile to see legal moves': 'اختر قطعة لترى الحركات الممكنة',
+      'No playable tile — drawing automatically…': 'لا توجد قطعة قابلة للعب — يتم السحب تلقائياً…',
+      'No playable tile — your turn passes.': 'لا توجد قطعة قابلة للعب — يمر دورك.',
+      'Face-down tiles — drawn automatically when a player can’t play.': 'قطع مقلوبة — تُسحب تلقائياً عندما لا يستطيع اللاعب اللعب.',
+      'The draw pile is empty.': 'كومة السحب فارغة.', 'Your hand is empty — you won this round!': 'يدك فارغة — فزت بالجولة!',
+      'That tile cannot match either open end.': 'هذه القطعة لا تطابق أي طرف مفتوح.',
+      'Cancel selection': 'إلغاء التحديد', 'Cancel': 'إلغاء', 'Start chain': 'ابدأ السلسلة',
+      'Play next round': 'العب الجولة التالية', 'Start a new match': 'ابدأ مباراة جديدة', 'Back to game': 'العودة للعبة',
+      'Opponent tiles revealed': 'كُشفت قطع الخصم',
+      'Take a look at the tiles your opponent was holding…': 'ألقِ نظرة على القطع التي كان يحملها خصمك…',
+      'Take a look at the tiles your opponents were holding…': 'ألقِ نظرة على القطع التي كان يحملها خصومك…',
+      "Opponent's tiles": 'قطع الخصم',
+      'You win the round!': 'فزت بالجولة!', 'AI wins this round': 'الكمبيوتر يفوز بالجولة',
+      'You win the blocked round!': 'فزت بالجولة المغلقة!', 'AI wins the blocked round': 'الكمبيوتر يفوز بالجولة المغلقة',
+      'Blocked round — tie': 'جولة مغلقة — تعادل', '🏆 You won the match!': '🏆 فزت بالمباراة!', 'AI won the match': 'فاز الكمبيوتر بالمباراة',
+      'Playable tile found — drag it to an end.': 'وجدت قطعة قابلة للعب — اسحبها إلى أحد الطرفين.',
+      'That tile does not match this end.': 'هذه القطعة لا تطابق هذا الطرف.', 'This tile does not match either end.': 'هذه القطعة لا تطابق أي طرف.',
+      'Sound on.': 'تم تشغيل الصوت.', 'Sound off.': 'تم كتم الصوت.',
+      'Tiles: ivory.': 'القطع: عاجية.', 'Tiles: ebony.': 'القطع: أبنوس.', 'Tiles: jade.': 'القطع: يشم.', 'Table: green felt.': 'الطاولة: أخضر.', 'Table: blue felt.': 'الطاولة: أزرق.', 'Table: burgundy felt.': 'الطاولة: عنابي.',
+      'New 2-player game.': 'لعبة جديدة للاعبين.', 'New 4-player game — 7 tiles each, no draw pile.': 'لعبة جديدة لأربعة لاعبين — 7 قطع لكل لاعب وبدون كومة سحب.',
+      'AI: Easy — plays carelessly.': 'الكمبيوتر: سهل — يلعب بلا تركيز.', 'AI: Medium — solid, no deep planning.': 'الكمبيوتر: متوسط — لعب جيد بدون تخطيط عميق.',
+      'AI: Hard — tracks passes, infers your tiles, looks ahead.': 'الكمبيوتر: صعب — يتتبع التجاوزات ويستنتج قطعك ويخطط مسبقاً.'
+    };
+    const R = [
+      [/^Round (\d+)$/, (m, a) => `الجولة ${a}`],
+      [/^First to (\d+)$/, (m, a) => `الأول إلى ${a}`],
+      [/^(\d+) tiles?$/, (m, a) => `${a} ${+a === 1 ? 'قطعة' : 'قطع'}`],
+      [/^Opponent holds (\d+) tiles?$/, (m, a) => `الخصم يحمل ${a} ${+a === 1 ? 'قطعة' : 'قطع'}`],
+      [/^(\d+) pips in hand$/, (m, a) => `${a} نقطة في يدك`],
+      [/^Selected (\S+)$/, (m, a) => `المحدد ${a}`],
+      [/^Drag (\S+) next to a highlighted table tile \(or tap that tile\)\.$/, (m, a) => `اسحب ${a} بجانب قطعة مضيئة على الطاولة (أو اضغط عليها).`],
+      [/^Drag (\S+) onto the table, or press the button:$/, (m, a) => `اسحب ${a} إلى الطاولة، أو اضغط الزر:`],
+      [/^(.+)’s turn$/, (m, a) => `دور ${a}`],
+      [/^(.+) is evaluating the board…$/, (m, a) => `${a} يدرس الطاولة…`],
+      [/^(.+) is considering a move…$/, (m, a) => `${a} يفكر في حركته…`],
+      [/^(.+) passed — no legal move\.$/, (m, a) => `${a} تجاوز دوره — لا توجد حركة.`],
+      [/^(.+)’s\s*tiles$/, (m, a) => `قطع ${a}`],
+      [/^(.+) won the match$/, (m, a) => `فاز ${a} بالمباراة`],
+      [/^(.+) wins this round$/, (m, a) => `${a} يفوز بالجولة`],
+      [/^(.+) wins the blocked round$/, (m, a) => `${a} يفوز بالجولة المغلقة`],
+      [/^You played your last tile\. The AI had (\d+) pips left, added to your match score\.$/, (m, a) => `لعبت آخر قطعة. كان مع الكمبيوتر ${a} نقطة، أُضيفت إلى نتيجتك.`],
+      [/^The AI played its last tile\. You had (\d+) pips left, added to the AI's match score\.$/, (m, a) => `لعب الكمبيوتر آخر قطعة. كان معك ${a} نقطة، أُضيفت إلى نتيجته.`],
+      [/^Your remaining pip total is (\d+), compared with (\d+) for the AI\. You earn all (\d+) points remaining in the AI's hand\.$/, (m, a, b, c) => `مجموع نقاطك المتبقية ${a} مقابل ${b} للكمبيوتر. تكسب كل النقاط ${c} الباقية في يده.`],
+      [/^The AI has (\d+) pips left compared with your (\d+)\. AI earns all (\d+) points remaining in your hand\.$/, (m, a, b, c) => `مع الكمبيوتر ${a} نقطة مقابل ${b} معك. يكسب الكمبيوتر كل النقاط ${c} الباقية في يدك.`],
+      [/^Both players have (\d+) pips remaining\. No points are awarded\.$/, (m, a) => `مع كل لاعب ${a} نقطة متبقية. لا تُمنح نقاط.`],
+      [/^Nobody can play\. (You|.+) (?:have|has) the lowest pip total \((\d+)\) and (?:earn|earns) all (\d+) pips left in the other hands\. Pips left: (.+)\.$/, (m, a, b, c, d) => `لا أحد يستطيع اللعب. ${a === 'You' ? 'أنت' : a} ${a === 'You' ? 'لديك' : 'لديه'} أقل مجموع نقاط (${b}) ${a === 'You' ? 'وتكسب' : 'ويكسب'} كل النقاط ${c} الباقية في الأيدي الأخرى. النقاط المتبقية: ${d}.`],
+      [/^(\d+) players tie for the lowest pip total \((\d+)\)\. No points are awarded\. Pips left: (.+)\.$/, (m, a, b, c) => `تعادل ${a} لاعبين في أقل مجموع نقاط (${b}). لا تُمنح نقاط. النقاط المتبقية: ${c}.`],
+      [/^You played your last tile\. The other players had (\d+) pips left in total, added to your match score\.$/, (m, a) => `لعبت آخر قطعة. كان مع الآخرين ${a} نقطة إجمالاً، أُضيفت إلى نتيجتك.`],
+      [/^(.+) played the last tile\. The other players had (\d+) pips left in total, added to .+’s match score\. Pips left: (.+)\.$/, (m, a, b, c) => `${a} لعب آخر قطعة. كان مع الآخرين ${b} نقطة إجمالاً، أُضيفت إلى نتيجته. النقاط المتبقية: ${c}.`],
+      [/^(?!You |The AI )(.+) reached (\d+) points and won the match\. Final score: (.+)\.$/, (m, a, b, c) => `${a} وصل إلى ${b} نقطة وفاز بالمباراة. النتيجة النهائية: ${c}.`],
+      [/^You reached (\d+) points and won the match! Final score: (.+)\.$/, (m, a, b) => `وصلت إلى ${a} نقطة وفزت بالمباراة! النتيجة النهائية: ${b}.`],
+      [/^The AI reached (\d+) points and won the match\. Final score: (.+)\.$/, (m, a, b) => `وصل الكمبيوتر إلى ${a} نقطة وفاز بالمباراة. النتيجة النهائية: ${b}.`]
+    ];
+    const trOne = t => {
+      if (D[t] !== undefined) return D[t];
+      for (const [re, fn] of R) { const m = t.match(re); if (m) return fn(...m); }
+      return null;
+    };
+    const trStr = str => {
+      const core = str.trim(); if (!core) return null;
+      const lead = str.slice(0, str.indexOf(core)), tail = str.slice(str.indexOf(core) + core.length);
+      let out = trOne(core);
+      if (out === null && (core.includes(' · ') || core.includes('\n'))) {
+        const parts = core.split(/( · |\n)/), tr = parts.map((p, i) => i % 2 ? null : trOne(p));
+        if (tr.some(x => x !== null)) out = parts.map((p, i) => tr[i] != null ? tr[i] : p).join('');
+      }
+      return out === null ? null : lead + out + tail;
+    };
+    const fix = n => { const r = trStr(n.nodeValue); if (r !== null && r !== n.nodeValue) n.nodeValue = r; };
+    const walk = root => { const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT), list = []; let n; while ((n = w.nextNode())) list.push(n); list.forEach(fix); };
+    document.documentElement.lang = 'ar';
+    document.title = 'دومينو ديول';
+    walk(document.body);
+    new MutationObserver(ms => ms.forEach(m => {
+      if (m.type === 'characterData') fix(m.target);
+      else m.addedNodes.forEach(a => { if (a.nodeType === 3) fix(a); else if (a.nodeType === 1) walk(a); });
+    })).observe(document.body, {childList: true, subtree: true, characterData: true});
+    $('soundBtn').title = 'الصوت (M)'; $('themeBtn').title = 'المظهر (C)'; $('themeBtn').setAttribute('aria-label', 'المظهر'); $('themeClose').setAttribute('aria-label', 'إغلاق');
+  }
   applyModeUI();
   newRound(true);
 })();
