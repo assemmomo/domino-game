@@ -61,8 +61,8 @@ button:focus-visible{outline:3px solid var(--brass-hi);outline-offset:2px}button
 .app[data-mode="4p"] .status-row{grid-column:1/-1;grid-row:1}
 .app[data-mode="4p"] .opponent-area{display:contents}
 .app[data-mode="4p"] .opp-seat[data-seat="2"]{grid-column:2;grid-row:2;height:calc(var(--bh) + 22px)}
-.app[data-mode="4p"] .opp-seat[data-seat="1"]{grid-column:1;grid-row:3}
-.app[data-mode="4p"] .opp-seat[data-seat="3"]{grid-column:3;grid-row:3}
+.app[data-mode="4p"] .opp-seat[data-seat="1"]{grid-column:3;grid-row:3}
+.app[data-mode="4p"] .opp-seat[data-seat="3"]{grid-column:1;grid-row:3}
 .app[data-mode="4p"] .board{grid-column:2;grid-row:3}
 .opp-seat.side{container-type:size;height:auto;min-height:0}
 .opp-seat.side.active{box-shadow:inset 0 0 0 2px color-mix(in srgb,var(--pc) 70%,transparent)}
@@ -109,6 +109,8 @@ button:focus-visible{outline:3px solid var(--brass-hi);outline-offset:2px}button
 .chain-count{font-size:12px;color:#cfe3d8cc}
 .chain-rows.snake{position:relative;margin:0 auto}.chain-rows.snake .domino{position:absolute;margin:0}
 .chain-rows .domino{--dw:var(--cw)}
+.chain-rows .domino.end-target{outline:2px dashed var(--brass);outline-offset:2px;cursor:pointer}
+.chain-rows .domino.end-hover{outline:3px solid var(--brass-hi);outline-offset:3px;filter:brightness(1.12)}
 
 .domino{--dw:42px;position:relative;width:var(--dw);height:calc(var(--dw)*1.9);flex:0 0 var(--dw);display:flex;flex-direction:column;align-items:center;justify-content:space-evenly;padding:calc(var(--dw)*.06) calc(var(--dw)*.05);border-radius:calc(var(--dw)*.17);border:1px solid #cbbe9b;background:linear-gradient(165deg,#fffbef,#f2e9d0 55%,#e2d6b4);box-shadow:var(--ts);color:#111}
 .domino:after{content:"";position:absolute;top:50%;left:calc(var(--dw)*.1);right:calc(var(--dw)*.1);height:1px;background:#8d8670;box-shadow:0 1px 0 #fff9}
@@ -222,7 +224,7 @@ button:focus-visible{outline:3px solid var(--brass-hi);outline-offset:2px}button
 (() => {
   const $ = id => document.getElementById(id);
   const HAND_SIZE = 7;
-  // Seat 0 is always the human. Turn order runs 0 → 1 → 2 → 3 → 0 …
+  // Seat 0 is always the human. Turn order runs 0 → 1 → 2 → 3 → 0 … (counterclockwise around the table in 4p)
   const MODES = {
     '2p': {n: 2, target: 250, names: ['You', 'Strategic AI']},
     '4p': {n: 4, target: 400, names: ['You', 'AI Ada', 'AI Bruno', 'AI Cleo']}
@@ -294,39 +296,86 @@ button:focus-visible{outline:3px solid var(--brass-hi);outline-offset:2px}button
     const sh = flip && !isDouble(t) ? {a: t.b, b: t.a} : t;
     return `<div data-idx="${idx}" class="domino small${isDouble(t) ? ' double' : ''}${horiz ? ' horizontal' : ''}${extraCls}" style="${style}" aria-label="${t.a} and ${t.b}"><div class="half">${pipMarkup(sh.a)}</div><div class="half">${pipMarkup(sh.b)}</div></div>`;
   }
-  // Snake layout: one row if it fits; otherwise the chain runs along a row, turns up through
-  // two vertical tiles at the edge, and continues back along the row above (doubles are crosswise).
+  // Snake layout, like a real domino table: tiles touch end to end with one small, even gap.
+  // The first row runs left→right. When a row is full the chain turns DOWN through a short column
+  // of vertical tiles that sits flush against the last tile of that row, then the next row runs
+  // back the other way (as in the reference picture). Doubles lie crosswise to the direction of play.
   function snakeLayout(tiles, W, T) {
-    const gap = 4, items = [], n = tiles.length;
+    const gap = 3, items = [], n = tiles.length;
+    const isD = i => isDouble(tiles[i]);
+    const len = i => isD(i) ? T : 2 * T; // length of tile i along a row
+    const rowItem = (i, x, rowY, flip) => isD(i)
+      ? {i, x, y: rowY - T / 2, w: T, h: 2 * T, horiz: false, flip: false}
+      : {i, x, y: rowY, w: 2 * T, h: T, horiz: true, flip};
     const total = tiles.reduce((a, t) => a + (isDouble(t) ? T : 2 * T) + gap, -gap);
-    const rowItem = (i, d, x, rowY, flip) => d ? {i, x, y: rowY - T / 2, w: T, h: 2 * T, horiz: false, flip} : {i, x, y: rowY, w: 2 * T, h: T, horiz: true, flip};
     let rows = 1;
     if (total <= W) {
       let x = (W - total) / 2;
-      tiles.forEach((t, i) => { const d = isDouble(t); items.push(rowItem(i, d, x, 0, false)); x += (d ? T : 2 * T) + gap; });
+      for (let i = 0; i < n; i++) { items.push(rowItem(i, x, 0, false)); x += len(i) + gap; }
     } else {
-      const Lx = T + gap, Rx = W - T - gap;
-      let dir = 1, cursor = Lx, rowY = 0, i = 0, placed = 0;
+      const room = gap + 1.5 * T; // space a turn column needs beside the last tile of a row
+      let dir = 1, cursor = 0, rowY = 0, i = 0, placed = 0;
       while (i < n) {
-        const d = isDouble(tiles[i]), w = d ? T : 2 * T;
-        const fits = dir === 1 ? cursor + w <= Rx : cursor - w >= Lx;
+        const w = len(i), need = i === n - 1 ? 0 : room;
+        const fits = dir === 1 ? cursor + w + need <= W : cursor - w - need >= 0;
         if (fits || placed === 0) {
-          const x = dir === 1 ? cursor : cursor - w;
-          items.push(rowItem(i, d, x, rowY, dir === -1));
+          items.push(rowItem(i, dir === 1 ? cursor : cursor - w, rowY, dir === -1));
           cursor += dir * (w + gap); i++; placed++;
-        } else {
-          const cx = dir === 1 ? W - T : 0;
-          for (let k = 0; k < 2 && i < n; k++, i++) {
-            const dd = isDouble(tiles[i]), top = rowY - T - k * 2 * T;
-            items.push(dd ? {i, x: cx - T / 2, y: top + T / 2, w: 2 * T, h: T, horiz: true, flip: false} : {i, x: cx, y: top, w: T, h: 2 * T, horiz: false, flip: true});
-          }
-          if (i < n) { rows++; rowY -= 3 * T; dir = -dir; cursor = dir === 1 ? Lx : Rx; placed = 0; }
+          continue;
         }
+        // Row is full: turn downwards. The column touches the last tile of the row.
+        const colX = dir === 1 ? cursor : cursor - T, cx = colX + T / 2;
+        let y = rowY, count = 0, ended = false;
+        while (i < n && !ended) {
+          const d = isD(i);
+          if (count === 0) { // corner tile: its top half sits beside the row
+            const top = d ? rowY - T / 2 : rowY;
+            items.push({i, x: colX, y: top, w: T, h: 2 * T, horiz: false, flip: false}); y = top + 2 * T;
+          } else if (d) { // double inside the column lies crosswise
+            items.push({i, x: cx - T, y, w: 2 * T, h: T, horiz: true, flip: false}); y += T;
+          } else { // last tile of the column: its lower half sits beside the next row
+            items.push({i, x: colX, y, w: T, h: 2 * T, horiz: false, flip: false}); y += 2 * T; ended = true;
+          }
+          i++; count++;
+        }
+        if (i < n) { rows++; rowY = y - T; dir = -dir; cursor = dir === 1 ? colX + T + gap : colX - gap; placed = 0; }
       }
     }
-    let minX = 0, maxX = W, minY = Infinity, maxY = -Infinity;
+    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
     items.forEach(it => { minX = Math.min(minX, it.x); maxX = Math.max(maxX, it.x + it.w); minY = Math.min(minY, it.y); maxY = Math.max(maxY, it.y + it.h); });
     return {items, rows, offX: -minX, offY: -minY, width: maxX - minX, height: maxY - minY};
+  }
+
+
+  // ---- Playing a tile by attaching it to an end tile on the table ------------------------
+  const endEl = side => { const snake = $('board').querySelector('.chain-rows.snake'); return snake ? snake.querySelector(`[data-idx="${side === 'left' ? 0 : state.chain.length - 1}"]`) : null; };
+  // Highlights the table tiles the dragged (or selected) hand tile can be attached to.
+  function markEnds() {
+    $('board').querySelectorAll('.end-target,.end-hover').forEach(el => el.classList.remove('end-target', 'end-hover'));
+    const idx = draggingHandIndex !== null ? draggingHandIndex : state.selected;
+    if (idx === null || state.turn !== 0 || state.gameOver || state.animating || !state.chain.length) return;
+    const t = state.hands[0][idx]; if (!t) return;
+    legalSides(t).forEach(side => { const el = endEl(side); if (el) el.classList.add('end-target'); });
+  }
+  // The side whose end tile is closest to the pointer (only legal sides are considered).
+  function pickEnd(px, py, tile) {
+    const sides = legalSides(tile); if (!sides.length) return null;
+    if (!state.chain.length || sides.length === 1) return sides[0];
+    const n = state.chain.length; let best = null, bd = Infinity;
+    sides.forEach(side => {
+      const el = endEl(side); if (!el) return;
+      const r = el.getBoundingClientRect(); let cx = r.left + r.width / 2;
+      if (n === 1) cx += side === 'left' ? -r.width / 4 : r.width / 4;
+      const d = Math.hypot(px - cx, py - (r.top + r.height / 2));
+      if (d < bd) { bd = d; best = side; }
+    });
+    return best || sides[0];
+  }
+  function onSnakeClick(e) {
+    if (!e.target.closest('.domino.end-target')) return;
+    if (state.turn !== 0 || state.gameOver || state.animating || state.selected === null) return;
+    const side = pickEnd(e.clientX, e.clientY, state.hands[0][state.selected]);
+    if (side) playTile(0, state.selected, side);
   }
 
   // Side players' revealed tiles lie flat (horizontal) so they stack down the column.
@@ -337,7 +386,7 @@ button:focus-visible{outline:3px solid var(--brass-hi);outline-offset:2px}button
     for (let s = 1; s < N(); s++) {
       const hand = state.hands[s];
       const seat = document.createElement('div');
-      const side = !two && s !== 2; // 4p: seat 1 = left, seat 2 = across, seat 3 = right
+      const side = !two && s !== 2; // 4p: seat 1 = right, seat 2 = across, seat 3 = left (play runs counterclockwise)
       seat.className = 'opp-seat' + (side ? ' side' : '') + (state.turn === s && !state.gameOver ? ' active' : '');
       seat.dataset.seat = s; seat.style.setProperty('--pc', `var(--p${s})`);
       const opponent = document.createElement('div');
@@ -377,7 +426,7 @@ button:focus-visible{outline:3px solid var(--brass-hi);outline-offset:2px}button
     const cs = getComputedStyle(board), padX = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight), padY = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);
     const base = board.clientWidth - padX - 6, H = Math.max(60, board.clientHeight - padY - 44);
     let T = 14, W = Math.max(120, base - 14), lay = null;
-    for (let c = Math.min(52, Math.floor(base / 8)); c >= 14; c -= 2) { const Wc = Math.max(120, base - c), l = snakeLayout(state.chain, Wc, c); T = c; W = Wc; lay = l; if (l.height <= H) break; }
+    for (let c = Math.min(52, Math.floor(base / 8)); c >= 14; c -= 2) { const Wc = Math.max(120, base), l = snakeLayout(state.chain, Wc, c); T = c; W = Wc; lay = l; if (l.height <= H && l.width <= base + .5) break; }
     state.snakeMeta = {T, W};
     const wrap = document.createElement('div'); wrap.className = 'chain-wrap';
     wrap.insertAdjacentHTML('beforeend', `<div class="chain-ends"><span class="chain-end left">Left end <b>${e[0]}</b></span><span class="chain-count">${n} tile${n === 1 ? '' : 's'}</span><span class="chain-end right"><b>${e[1]}</b> Right end</span></div>`);
@@ -387,8 +436,8 @@ button:focus-visible{outline:3px solid var(--brass-hi);outline-offset:2px}button
       const t = state.chain[it.i]; let cls = ''; if (t === state.lastTile) cls += ' played-in'; if (t.first) cls += ' spinner';
       snake.insertAdjacentHTML('beforeend', tileHTMLdir(t, it.horiz, it.flip, cls, it.i, `left:${(it.x + lay.offX).toFixed(1)}px;top:${(it.y + lay.offY).toFixed(1)}px;width:${it.w}px;height:${it.h}px`));
     });
-    wrap.appendChild(snake);
-    scroll.appendChild(wrap); board.appendChild(scroll);
+    snake.addEventListener('click', onSnakeClick); wrap.appendChild(snake);
+    scroll.appendChild(wrap); board.appendChild(scroll); markEnds();
     $('boardHint').textContent = `Open ends: ${e[0]} and ${e[1]} · ${state.chain.length} tile${state.chain.length === 1 ? '' : 's'} played · All tiles visible`;
   }
 
@@ -416,8 +465,8 @@ button:focus-visible{outline:3px solid var(--brass-hi);outline-offset:2px}button
       b.innerHTML = tileHTML(t) + ((state.turn === 0 && !state.gameOver && state.chain.length && !isPlayable) ? '<span class="tile-tag" style="background:#d9dfd8">×</span>' : '');
       b.draggable = true; if (state.dealing) { b.classList.add('dealt'); b.style.animationDelay = `${i * .07}s`; }
       b.addEventListener('click', () => selectTile(i));
-      b.addEventListener('dragstart', e => { if (state.turn !== 0 || state.gameOver) { e.preventDefault(); return; } e.dataTransfer.setData('text/plain', String(i)); draggingHandIndex = i; e.dataTransfer.effectAllowed = 'move'; b.classList.add('dragging'); });
-      b.addEventListener('dragend', () => { draggingHandIndex = null; b.classList.remove('dragging'); hand.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over')); });
+      b.addEventListener('dragstart', e => { if (state.turn !== 0 || state.gameOver) { e.preventDefault(); return; } e.dataTransfer.setData('text/plain', String(i)); draggingHandIndex = i; markEnds(); e.dataTransfer.effectAllowed = 'move'; b.classList.add('dragging'); });
+      b.addEventListener('dragend', () => { draggingHandIndex = null; markEnds(); b.classList.remove('dragging'); hand.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over')); });
       b.addEventListener('dragover', e => { if (state.turn !== 0 || state.gameOver || state.animating) return; e.preventDefault(); b.classList.add('drag-over'); e.dataTransfer.dropEffect = 'move'; });
       b.addEventListener('dragleave', () => b.classList.remove('drag-over'));
       b.addEventListener('drop', e => { e.preventDefault(); b.classList.remove('drag-over'); if (state.turn !== 0 || state.gameOver || state.animating) return; const from = Number(e.dataTransfer.getData('text/plain')), to = i; if (!Number.isInteger(from) || from < 0 || from >= H.length || from === to) return; const [moved] = H.splice(from, 1); H.splice(to, 0, moved); if (state.selected === from) state.selected = to; else if (state.selected !== null && from < state.selected && to >= state.selected) state.selected--; else if (state.selected !== null && from > state.selected && to <= state.selected) state.selected++; render(); });
@@ -431,14 +480,13 @@ button:focus-visible{outline:3px solid var(--brass-hi);outline-offset:2px}button
     if (state.gameOver) { box.innerHTML = '<span class="hint">Round complete. Start the next round to continue.</span>'; return; }
     if (state.turn !== 0) { box.innerHTML = `<span class="hint">${N() === 2 ? 'The AI is considering its next move…' : `${nameOf(state.turn)} is considering a move…`}</span>`; return; }
     if (state.note) { box.innerHTML = `<span class="hint">${state.note}</span>`; return; }
-    if (state.selected === null) { box.innerHTML = '<span class="hint">Drag a playable tile onto the left or right end of the board.</span>'; return; }
+    if (state.selected === null) { box.innerHTML = '<span class="hint">Drag a playable tile and attach it to the table tile you want to play beside.</span>'; return; }
     const t = state.hands[0][state.selected], sides = legalSides(t);
     if (!sides.length) { box.innerHTML = '<span class="hint">That tile cannot match either open end.</span><button class="ghost" id="clearSelection">Cancel selection</button>'; $('clearSelection').onclick = () => { state.selected = null; render(); }; return; }
-    box.insertAdjacentHTML('beforeend', `<span class="hint">Drag ${tileLabel(t)} to the matching end, or use a button:</span>`);
-    sides.forEach(side => {
-      const b = document.createElement('button'); b.className = 'primary'; b.textContent = !state.chain.length ? 'Start chain' : side === 'left' ? `← Left end (${ends()[0]})` : `Right end (${ends()[1]} →)`;
-      b.onclick = () => playTile(0, state.selected, side); box.appendChild(b);
-    });
+    if (!state.chain.length) {
+      box.insertAdjacentHTML('beforeend', `<span class="hint">Drag ${tileLabel(t)} onto the table, or press the button:</span>`);
+      const start = document.createElement('button'); start.className = 'primary'; start.textContent = 'Start chain'; start.onclick = () => playTile(0, state.selected, sides[0]); box.appendChild(start);
+    } else box.insertAdjacentHTML('beforeend', `<span class="hint">Drag ${tileLabel(t)} next to a highlighted table tile (or tap that tile).</span>`);
     const cancel = document.createElement('button'); cancel.className = 'ghost'; cancel.textContent = 'Cancel'; cancel.onclick = () => { state.selected = null; render(); }; box.appendChild(cancel);
   }
 
@@ -470,7 +518,7 @@ button:focus-visible{outline:3px solid var(--brass-hi);outline-offset:2px}button
     $('turnLabel').className = 'turn-label'; $('turnLabel').style.setProperty('--tc', `var(--p${state.turn})`);
     $('turnText').textContent = state.gameOver ? 'Round complete' : myTurn ? 'Your turn' : (N() === 2 ? 'AI turn' : `${nameOf(state.turn)}’s turn`);
     $('statusNote').textContent = state.gameOver ? 'Check the result and start another round.'
-      : myTurn ? (state.note || (humanTurn ? 'Drag a tile to the left or right end of the table.' : ''))
+      : myTurn ? (state.note || (humanTurn ? 'Drag a tile next to the table tile you want to play beside.' : ''))
       : (N() === 2 ? 'The AI is evaluating the board…' : `${nameOf(state.turn)} is evaluating the board…`);
     $('humanState').textContent = state.gameOver ? 'Round complete' : myTurn ? 'Your turn' : 'Waiting';
     $('aiState').textContent = state.gameOver ? 'Round complete' : state.turn === 1 ? 'Calculating move' : 'Observing the board';
@@ -610,7 +658,7 @@ button:focus-visible{outline:3px solid var(--brass-hi);outline-offset:2px}button
       const tiles = side === 'right' ? [...state.chain, t] : [t, ...state.chain];
       const lay = snakeLayout(tiles, meta.W, meta.T);
       const it = side === 'right' ? lay.items[lay.items.length - 1] : lay.items[0];
-      destRect = {left: cr.left + it.x + lay.offX, top: cr.top + it.y + lay.offY, width: it.w, height: it.h};
+      destRect = {left: cr.left + (cr.width - lay.width) / 2 + it.x + lay.offX, top: cr.top + (cr.height - lay.height) / 2 + it.y + lay.offY, width: it.w, height: it.h};
     } else destRect = {left: boardRect.left + boardRect.width / 2 - 24, top: boardRect.top + boardRect.height * .5, width: 44, height: 70};
     const g = state.gen;
     state.animating = true; render();
@@ -886,23 +934,20 @@ button:focus-visible{outline:3px solid var(--brass-hi);outline-offset:2px}button
   const boardEl = $('board');
   boardEl.addEventListener('dragover', e => {
     if (state.turn !== 0 || state.gameOver || state.animating) return;
-    const tileIndex = draggingHandIndex;
-    if (!Number.isInteger(tileIndex) || tileIndex < 0 || tileIndex >= state.hands[0].length) return;
-    const sides = legalSides(state.hands[0][tileIndex]); if (!sides.length) return;
-    e.preventDefault(); const rect = boardEl.getBoundingClientRect();
-    let side = !state.chain.length ? 'right' : (e.clientX < rect.left + rect.width / 2 ? 'left' : 'right');
-    if (!sides.includes(side)) side = sides[0];
-    boardEl.classList.toggle('drop-left', side === 'left'); boardEl.classList.toggle('drop-right', side === 'right');
-    boardEl.dataset.dropLabel = side === 'left' ? 'DROP ON LEFT END' : 'DROP ON RIGHT END'; e.dataTransfer.dropEffect = 'move';
+    const idx = draggingHandIndex;
+    if (!Number.isInteger(idx) || idx < 0 || idx >= state.hands[0].length) return;
+    const side = pickEnd(e.clientX, e.clientY, state.hands[0][idx]); if (!side) return;
+    e.preventDefault(); e.dataTransfer.dropEffect = 'move';
+    boardEl.querySelectorAll('.end-hover').forEach(el => el.classList.remove('end-hover'));
+    const el = state.chain.length ? endEl(side) : null; if (el) el.classList.add('end-hover');
   });
-  boardEl.addEventListener('dragleave', e => { if (!boardEl.contains(e.relatedTarget)) { boardEl.classList.remove('drop-left', 'drop-right'); } });
+  boardEl.addEventListener('dragleave', e => { if (!boardEl.contains(e.relatedTarget)) boardEl.querySelectorAll('.end-hover').forEach(el => el.classList.remove('end-hover')); });
   boardEl.addEventListener('drop', e => {
-    e.preventDefault(); boardEl.classList.remove('drop-left', 'drop-right');
+    e.preventDefault(); boardEl.querySelectorAll('.end-hover').forEach(el => el.classList.remove('end-hover'));
     if (state.turn !== 0 || state.gameOver || state.animating) return;
     const index = draggingHandIndex; if (!Number.isInteger(index) || index < 0 || index >= state.hands[0].length) return;
-    const sides = legalSides(state.hands[0][index]); if (!sides.length) { toast('This tile does not match either end.'); return; }
-    const rect = boardEl.getBoundingClientRect(); let side = !state.chain.length ? 'right' : (e.clientX < rect.left + rect.width / 2 ? 'left' : 'right');
-    if (!sides.includes(side)) { if (sides.length === 1) side = sides[0]; else { toast('Drop closer to the end you want to use.'); return; } }
+    const side = pickEnd(e.clientX, e.clientY, state.hands[0][index]);
+    if (!side) { toast('This tile does not match either end.'); return; }
     playTile(0, index, side);
   });
   document.querySelectorAll('.mode-seg button').forEach(b => b.addEventListener('click', () => setMode(b.dataset.mode)));
