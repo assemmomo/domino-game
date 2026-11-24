@@ -355,6 +355,57 @@ html[data-tiles="jade"] .domino:after{background:#0f4535;box-shadow:0 1px 0 #fff
 html[data-tiles="jade"] .domino.horizontal:after{box-shadow:1px 0 0 #ffffff55}
 html[data-tiles="jade"] .pip{background:radial-gradient(circle at 34% 28%,#fffef2,#efe6c4 65%,#bcae82);box-shadow:0 1px 2px #0a3a2ccc}
 html[data-tiles="jade"] .hand-tile.playable-tile .domino{box-shadow:0 2px 0 #0f4535,0 0 0 2px #f2c76fcc,0 0 18px #f2c76f88,0 9px 14px #000a}
+/* ===== bigger table on phones ===== */
+@media (max-width:600px) and (orientation:portrait){
+  :root{--bh:38px;--dt:28px}
+  .app{gap:5px}
+  .status-row{display:none}
+  .topbar{gap:5px 6px}
+  .top-actions>button{min-height:34px}
+  .seg-row .mode-seg{margin-top:0}
+  .seg-row .mode-seg button{padding:4px;min-height:28px}
+  .player-card{padding:3px 8px}
+  .score-card{padding:2px 10px;min-width:90px}
+  .score{font-size:21px}
+  .score-card small,.score-caption{font-size:10px}
+  .count{font-size:10px}.count b{font-size:17px}
+  .sb4-head{padding:2px 10px;font-size:10px}
+  .chip{padding:2px 6px 5px}.chip-score{font-size:18px;margin:0}.chip-meta{font-size:10px}
+  .opponent-area{height:calc(var(--bh) + 15px)}
+  .opponent-hand-caption{margin-bottom:2px;font-size:10px}
+  .app[data-mode="4p"] .opp-seat[data-seat="2"]{height:calc(var(--bh) + 15px)}
+  .board{padding:4px 6px;border-width:6px;border-radius:16px}
+  .board:before{inset:3px;border-radius:11px}
+  .chain-wrap{gap:4px}
+  .dock{padding:6px 8px;gap:5px}
+  .draw-zone{grid-template-columns:auto minmax(0,1fr);grid-template-areas:"head tiles";align-items:center;gap:8px}
+  .draw-zone .zone-head{flex-direction:column;align-items:flex-start;gap:1px;min-height:0;font-size:10px;line-height:1.1}
+  .draw-table{height:calc(var(--dt) + 8px);padding:4px 6px}
+  .hand{padding:12px 4px 8px;min-height:0}
+  .play-actions{height:34px}
+  .play-actions button{padding:6px 10px;min-height:32px}
+}
+@media (max-width:600px) and (orientation:portrait) and (max-height:700px){
+  :root{--bh:32px;--dt:24px}
+  .hand{padding-top:10px}
+}
+@media (max-height:500px) and (orientation:landscape){
+  .app{gap:4px}
+  .topbar{grid-template-columns:auto minmax(0,1fr) auto;grid-template-areas:"segs score actions";gap:6px}
+  .brand h1{display:none}
+  .seg-row{flex-direction:column;gap:3px;justify-content:center}
+  .seg-row .mode-seg{margin:0}
+  .seg-row .mode-seg button{padding:2px 7px;min-height:22px;font-size:11px}
+  .scorebar,.scorebar4{width:min(100%,460px);justify-self:center}
+  .top-actions{align-self:center}
+  .opponent-area{height:var(--bh)}
+  .board{padding:3px 8px;border-width:6px}
+  .chain-wrap{gap:3px}
+  .chain-end{padding:2px 5px 2px 9px;font-size:11px}.chain-end.right{padding:2px 9px 2px 5px}.chain-end b{width:17px;height:17px;font-size:11px}
+  .dock{padding:4px 10px}
+  .hand{padding:6px 4px 7px}
+  .play-actions{min-height:22px}
+}
 </style>
 </head>
 <body>
@@ -422,7 +473,7 @@ html[data-tiles="jade"] .hand-tile.playable-tile .domino{box-shadow:0 2px 0 #0f4
     mode: '2p', hands: [], scores: [0, 0], shownScores: [0, 0], pile: [], chain: [],
     turn: 0, selected: null, gameOver: false, round: 1, animating: false, revealOpponent: false, resultTimer: null,
     logs: [], aiTimer: null, previousWinner: null, matchOver: false, passed: new Set(), missing: [], difficulty: 'hard', note: '', gen: 0,
-    dealing: false, lastTile: null, snakeMeta: null
+    dealing: false, lastTile: null, snakeMeta: null, openingTile: null
   };
   let draggingHandIndex = null;
   const cfg = () => ({...MODES[state.mode], target: MODES[state.mode].target});
@@ -437,7 +488,7 @@ html[data-tiles="jade"] .hand-tile.playable-tile .domino{box-shadow:0 2px 0 #0f4
   const hasNumber = (t, n) => t.a === n || t.b === n;
   const ends = () => state.chain.length ? [state.chain[0].a, state.chain[state.chain.length - 1].b] : null;
   const legalSides = t => {
-    if (!state.chain.length) return ['left'];
+    if (!state.chain.length) return !state.openingTile || t === state.openingTile ? ['left'] : [];
     const e = ends(), sides = [];
     if (hasNumber(t, e[0])) sides.push('left');
     if (hasNumber(t, e[1])) sides.push('right');
@@ -939,9 +990,18 @@ html[data-tiles="jade"] .hand-tile.playable-tile .domino{box-shadow:0 2px 0 #0f4
   // ---- Turn flow -------------------------------------------------------------------------
   function advance() { state.turn = (state.turn + 1) % N(); state.selected = null; state.note = ''; render(); startTurn(); }
 
+  // The game is locked when no tile outside the table (in any hand or the draw pile) matches either open end,
+  // e.g. both ends show the same number and all seven tiles of that number are already on the table.
+  function chainLocked() {
+    if (!state.chain.length) return false;
+    const e = ends();
+    return ![...state.hands.flat(), ...state.pile].some(t => hasNumber(t, e[0]) || hasNumber(t, e[1]));
+  }
   function startTurn() {
     clearTimeout(state.aiTimer);
     if (state.gameOver) return;
+    // Locked table: nobody draws from the pile; the round ends now and only the tiles in the players' hands are counted.
+    if (chainLocked()) { if (state.pile.length) toast('The game is locked — counting the tiles in hand.'); finishBlocked(); return; }
     // Nobody can move and there is nothing left to draw: the round is blocked.
     if (state.chain.length && !state.pile.length && state.hands.every(h => !canPlay(h))) { finishBlocked(); return; }
     const s = state.turn, g = state.gen;
@@ -1221,24 +1281,30 @@ html[data-tiles="jade"] .hand-tile.playable-tile .domino{box-shadow:0 2px 0 #0f4
     }
     setTimeout(() => layer.remove(), 4200);
   }
-  function finishBlocked() { if (state.gameOver) return; log('Nobody can play and the draw pile is empty.'); finishRound(null, 'blocked'); }
+  function finishBlocked() { if (state.gameOver) return; log(state.pile.length ? 'The game is locked — nobody can play.' : 'Nobody can play and the draw pile is empty.'); finishRound(null, 'blocked'); }
 
   function newRound(resetScores = false) {
     clearTimeout(state.aiTimer); clearTimeout(state.resultTimer); state.gen++;
-    const n = N(), deal = dealValid(n);
+    const n = N();
+    if (resetScores) state.previousWinner = null;
+    const viaWinner = !resetScores && state.previousWinner !== null;
+    // Opening round: re-deal in the rare case that no player holds any double from 6|6 down to 1|1.
+    let deal = dealValid(n);
+    for (let k = 0; !viaWinner && k < 200 && !deal.hands.some(h => h.some(t => isDouble(t) && t.a >= 1)); k++) deal = dealValid(n);
     state.hands = deal.hands; state.pile = deal.pile; state.chain = []; state.lastTile = null; state.selected = null;
     state.gameOver = false; state.animating = false; state.revealOpponent = false; state.passed = new Set(); state.missing = Array.from({length: n}, () => new Set()); state.note = '';
     if (resetScores) { state.scores = Array(n).fill(0); state.shownScores = Array(n).fill(0); state.round = 1; state.matchOver = false; state.previousWinner = null; }
     // The previous round's winner starts the next round. The opening round (or a tie) uses the highest-double rule.
     const all = []; state.hands.forEach((h, who) => h.forEach(t => all.push({t, who})));
-    const viaWinner = !resetScores && state.previousWinner !== null;
-    let starter;
+    let starter; state.openingTile = null;
     if (viaWinner) {
       const who = state.previousWinner;
       starter = {who, t: state.hands[who].slice().sort((a, b) => (b.a + b.b) - (a.a + a.b))[0]};
     } else {
-      const doubles = all.filter(x => isDouble(x.t)).sort((x, y) => y.t.a - x.t.a);
+      // 6|6 must be played first; if no player holds it then 5|5, then 4|4, 3|3, 2|2, 1|1.
+      const doubles = all.filter(x => isDouble(x.t) && x.t.a >= 1).sort((x, y) => y.t.a - x.t.a);
       starter = doubles.length ? doubles[0] : all.slice().sort((x, y) => (y.t.a + y.t.b) - (x.t.a + x.t.b))[0];
+      state.openingTile = starter.t;
     }
     state.turn = starter.who;
     state.logs = [];
@@ -1246,6 +1312,7 @@ html[data-tiles="jade"] .hand-tile.playable-tile .domino{box-shadow:0 2px 0 #0f4
     log(`${starter.who === 0 ? 'You start' : `${nameOf(starter.who)} starts`}${viaWinner ? ' as the previous round winner' : ''} with ${tileLabel(starter.t)}.`);
     $('modalBackdrop').classList.remove('show');
     state.dealing = true; render(); state.dealing = false;
+    if (state.openingTile) toast(`${starter.who === 0 ? 'You open' : `${nameOf(starter.who)} opens`} with ${tileLabel(state.openingTile)}.`);
     startTurn();
   }
 
@@ -1327,11 +1394,11 @@ html[data-tiles="jade"] .hand-tile.playable-tile .domino{box-shadow:0 2px 0 #0f4
   function rulesText() {
     if (LANG === 'ar') {
       const tip = 'نصيحة: اضغط M لكتم الصوت، C لتغيير لون الطاولة، T لتغيير شكل القطع. ';
-      const common = ' يبدأ صاحب أعلى مزدوج؛ وإن لم يوجد مزدوج تبدأ القطعة الأعلى نقاطاً. يُعاد خلط التوزيع حتى لا يملك أي لاعب أكثر من خمس قطع تحتوي على الرقم نفسه.';
+      const common = ' في الجولة الأولى يجب أن تُلعب 6|6 أولاً؛ وإن لم تكن مع أي لاعب فـ 5|5 ثم 4|4 ثم 3|3 ثم 2|2 ثم 1|1. إذا قُفل اللعب (لا توجد قطعة متبقية تطابق الطرفين) لا يسحب أحد من الكومة: تنتهي الجولة وتُحسب النقاط التي في أيدي اللاعبين فقط. يُعاد خلط التوزيع حتى لا يملك أي لاعب أكثر من خمس قطع تحتوي على الرقم نفسه.';
       if (state.mode === '4p') return `${tip}أربعة لاعبين (أنت وثلاثة من الكمبيوتر)، لكل واحد 7 قطع وبدون كومة سحب. العب قطعة تطابق أحد الطرفين المفتوحين، وإن لم تستطع يمر دورك تلقائياً. أول من يفرغ يده يفوز بالجولة ويأخذ كل النقاط المتبقية في أيدي الثلاثة الآخرين. إذا لم يستطع أحد اللعب فصاحب أقل مجموع نقاط يفوز بالجولة (والتعادل في الأقل لا يمنح نقاطاً). الأول الذي يصل إلى ${cfg().target} نقطة يفوز بالمباراة.${common}`;
       return `${tip}العب قطعة تطابق أحد الطرفين المفتوحين. إن لم تكن لديك قطعة قابلة للعب تُسحب لك القطع تلقائياً حتى تجد واحدة أو تنتهي الكومة، وإن لم تستطع اللعب يمر دورك. إذا لم يستطع أحد اللعب والكومة فارغة فصاحب أقل مجموع نقاط متبقية يفوز بالجولة ويأخذ كل نقاط يد الخصم. الأول الذي يصل إلى ${cfg().target} نقطة يفوز بالمباراة.${common}`;
     }
-    const common = 'The highest double in the opening hands starts; if there are no doubles, the highest-pip tile starts. The opening deal is reshuffled until each player has at most five tiles containing any given number.';
+    const common = 'In the first round 6|6 must be played first; if no player holds it, then 5|5, then 4|4, 3|3, 2|2 or 1|1. If the game is locked (no tile left anywhere matches the open ends), nobody draws: the round ends and only the tiles in the players\' hands are counted. The opening deal is reshuffled until each player has at most five tiles containing any given number.';
     if (state.mode === '4p') return `Four players (you and three AIs) each get 7 tiles, and there is no draw pile. Play a tile that matches either open end; if you can’t, your turn passes automatically. The first player to empty their hand wins the round and scores all pips left in the other three hands. If nobody can play, the lowest remaining pip total wins the round and scores the pips left in the other hands (a tie for lowest scores nothing). First to ${cfg().target} points wins the match. ${common}`;
     return `Tip: press M to mute, C to change the table color, T to change the tiles. Play a tile that matches either open end. If you have no playable tile, tiles are drawn for you automatically until you find one or the pile is empty; if you still can’t play, your turn passes. If no one can play with an empty pile, the player with the lower remaining pip total wins the round and scores all pips left in the opponent hand. First to ${cfg().target} points wins the match. ${common}`;
   }
@@ -1450,6 +1517,7 @@ html[data-tiles="jade"] .hand-tile.playable-tile .domino{box-shadow:0 2px 0 #0f4
       'Your turn': 'دورك', 'Waiting': 'ينتظر', 'AI turn': 'دور الكمبيوتر', 'Round complete': 'انتهت الجولة',
       'tiles': 'قطع', 'tile': 'قطعة', 'passed': 'تجاوز',
       'Ready to play?': 'مستعد للعب؟', 'The highest double starts the round.': 'أعلى مزدوج يبدأ الجولة.',
+      'The game is locked — counting the tiles in hand.': 'اللعب مقفول — يتم حساب النقاط التي في الأيدي.',
       'Left end': 'الطرف الأيسر', 'Right end': 'الطرف الأيمن',
       'Select a tile that matches either open end.': 'اختر قطعة تطابق أحد الطرفين المفتوحين.',
       'Drag a tile next to the table tile you want to play beside.': 'اسحب قطعة بجانب قطعة الطاولة التي تريد اللعب عندها.',
@@ -1490,6 +1558,8 @@ html[data-tiles="jade"] .hand-tile.playable-tile .domino{box-shadow:0 2px 0 #0f4
       [/^Selected (\S+)$/, (m, a) => `المحدد ${a}`],
       [/^Drag (\S+) next to a highlighted table tile \(or tap that tile\)\.$/, (m, a) => `اسحب ${a} بجانب قطعة مضيئة على الطاولة (أو اضغط عليها).`],
       [/^Drag (\S+) onto the table, or press the button:$/, (m, a) => `اسحب ${a} إلى الطاولة، أو اضغط الزر:`],
+      [/^You open with (\S+)\.$/, (m, a) => `تبدأ أنت بـ ${a}.`],
+      [/^(.+) opens with (\S+)\.$/, (m, a, b) => `${a === 'AI' || a === 'Strategic AI' ? 'الكمبيوتر' : a} يبدأ بـ ${b}.`],
       [/^(.+)’s turn$/, (m, a) => `دور ${a}`],
       [/^(.+) is evaluating the board…$/, (m, a) => `${a} يدرس الطاولة…`],
       [/^(.+) is considering a move…$/, (m, a) => `${a} يفكر في حركته…`],
